@@ -1428,7 +1428,7 @@ function downloaderName(){
   if(p === "com.dv.adm") return "ADM";
   return "下载器";
 }
-function sendToDownloader(url){
+function sendToDownloader(url, filename){
   // 用 ACTION_VIEW，而不用 ACTION_SEND（实测 1DM Manifest 得出的结论）：
   // 1DM 把 SEND filter 挂在 UrlHandlerDownloader 上，但该 filter 只有 DEFAULT、没有 BROWSABLE；
   // 浏览器发 intent:// 会自动带上 BROWSABLE，而 Android 要求 intent 的 category 必须全在 filter 里，
@@ -1436,6 +1436,10 @@ function sendToDownloader(url){
   // 1DM 的 VIEW filter（含 http/https scheme + 音频扩展名 pathPattern）带有 BROWSABLE，
   // 专为浏览器调用设计——这才是"X 浏览器可以"的真相：X 是原生 App，发 intent 不会自动加
   // BROWSABLE，所以它的 SEND 能匹配上；网页没有这个特权，必须走 VIEW。
+  // 文件名：反编译 1DM 的 Downloader 类（classes10.dex）发现它按顺序读这些 extra 当文件名：
+  // android.intent.extra.SUBJECT → extra_filename → com.android.extra.filename →
+  // filename → song → title → android.intent.extra.TEXT。
+  // X 浏览器调 1DM+ 能正确显示文件名，就是因为传了其中之一；网页 intent:// 同样可以带 S.* extra。
   const pkg = downloaderPkg();
   const m = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]+)([^?#]*)(\?[^#]*)?/i.exec(url);
   const scheme = (m && m[1] || "https").toLowerCase();
@@ -1443,10 +1447,15 @@ function sendToDownloader(url){
   // 注意：intent 参数里不能出现原始分号，encodeURIComponent 不编码分号，需手动处理
   const data = rest.replace(/;/g, "%3B");
   const fallback = encodeURIComponent("https://play.google.com/store/apps/details?id=" + pkg).replace(/;/g, "%3B");
+  let extras = "";
+  if(filename){
+    const encName = encodeURIComponent(filename).replace(/;/g, "%3B");
+    extras = ";S.filename=" + encName + ";S.title=" + encName + ";S.android.intent.extra.SUBJECT=" + encName;
+  }
   window.location.href = "intent://" + data +
     "#Intent;scheme=" + scheme + ";action=android.intent.action.VIEW" +
     ";package=" + pkg +
-    ";S.browser_fallback_url=" + fallback + ";end";
+    ";S.browser_fallback_url=" + fallback + extras + ";end";
 }
 async function currentProxy(){
   // 返回当前可用代理（必要时先探测），没有则返回 null
@@ -1462,29 +1471,10 @@ async function downloadEpisode(sub, ep){
   const base = (ep.title || "episode").replace(/[\\/:*?"<>|]/g, " ").slice(0, 80);
   const extM = String(ep.audioUrl||"").match(/\.([a-z0-9]{2,4})(?:[?#]|$)/i);
   const fname = base + "." + (extM ? extM[1].toLowerCase() : "mp3");
-  const isXyz = /media\.xyzcdn\.net/.test(ep.audioUrl || "") || (sub && sub.group === XYZ_GROUP);
-  if(isXyz){
-    // 小宇宙单集：直连浏览器下载（小宇宙回 CORS 头，无需代理；a.download 指定正确文件名）。
-    // 原因：1DM+ 只能从 URL 取文件名，而小宇宙音频 URL 与 Content-Disposition 都是 hash，
-    // 经 1DM+ 下载文件名必为乱码；X 浏览器能识别是因为它用页面标题命名。
-    try{
-      toast("正在下载…");
-      const r = await fetch(ep.audioUrl);
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      const blob = await r.blob();
-      if(!blob.size) throw new Error("empty");
-      const obj = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = obj; a.download = fname;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(obj), 120000);
-      toast("已开始下载：" + fname);
-      return;
-    }catch(e){ /* 直连失败，回退到用户设置的下载方式 */ }
-  }
   if(settings.downloadMode==="share"){
-    // 外部下载器模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底
-    sendToDownloader(ep.audioUrl);try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
+    // 外部下载器模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底；
+    // 文件名经 S.filename / S.title / S.android.intent.extra.SUBJECT 传给 1DM+（反编译得出它认这些）
+    sendToDownloader(ep.audioUrl, ep.title);try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
     toast("已发送到" + downloaderName() + "（若未安装对应 App，链接已复制，可手动粘贴到下载器）");
     return;
   }
