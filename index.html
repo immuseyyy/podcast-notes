@@ -307,9 +307,9 @@
       <p class="hint">点单集或播放器上的下载按钮时如何处理音频。</p>
       <div class="seg" role="group" aria-label="下载方式">
         <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
-        <button id="dlShare" aria-pressed="false">分享到外部下载器</button>
+        <button id="dlShare" aria-pressed="false">复制链接到 1DM</button>
       </div>
-      <p class="hint" id="dlHint">分享方式会调起系统分享面板，可选 1DM / NDM 等外部下载器；不支持分享时自动改为复制链接。</p>
+      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；1DM 模式复制音频链接并尝试打开 1DM（需在 1DM 里开启「智能下载」自动接管剪贴板链接）。</p>
     </div>
 
     <div class="card">
@@ -357,7 +357,7 @@
       <div class="capline">
         <button id="capBtn"></button>
         <span id="capTime">—</span>
-        <span class="hint" id="capHint">按下打点，冻结当前时间</span>
+        <span class="hint" id="capHint">可打点冻结时间，不打点则按保存时的进度记</span>
       </div>
       <textarea id="noteText" rows="3" enterkeyhint="enter" placeholder="记一句想法…（回车换行）"></textarea>
       <div class="saverow">
@@ -903,7 +903,7 @@ function playEpisode(sub, ep, startAt, autoplay){
   const cv = $("#dockCover");
   if(ep.cover || sub.cover){ cv.src = ep.cover || sub.cover; } else { cv.removeAttribute("src"); }
   $("#composer").classList.add("on");
-  if(!editingNoteId){ capturedTime = null; $("#capTime").textContent = "—"; $("#capHint").textContent = "按下打点，冻结当前时间"; }
+  if(!editingNoteId){ capturedTime = null; $("#capTime").textContent = "—"; $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记"; }
   setDockVisible(); renderSubs(); updatePlayBtn(); setupMediaSession();
   if(autoplay){ const p = audio.play(); if(p) p.catch(()=>toast("播放失败：音频地址不可达")); }
 }
@@ -991,18 +991,19 @@ $("#saveNoteBtn").addEventListener("click", ()=>{
     toast("笔记已更新");
   }else{
     if(!current){ toast("先播放一集播客再记笔记"); return; }
-    if(capturedTime==null){ toast("先点「打点」冻结时间点"); return; }
+    // 没打点则自动取点保存时的播放位置，省掉强制打点一步；打点仍可用于边听边冻结时刻
+    const noteTime = capturedTime!=null ? capturedTime : Math.floor(audio.currentTime || 0);
     if(!text){ toast("先写一句想法"); $("#noteText").focus(); return; }
     notes.push({
       id: uid(), subId: current.sub.id, subName: epDisplayName(current.sub, current.ep),
       epId: current.ep.id, epTitle: current.ep.title, audioUrl: current.ep.audioUrl,
-      time: capturedTime, text, createdAt: Date.now()
+      time: noteTime, text, createdAt: Date.now()
     });
     saveNotes();
-    toast("已保存到 " + fmtTime(capturedTime));
+    toast("已保存到 " + fmtTime(noteTime));
   }
   capturedTime = null; $("#capTime").textContent = "—";
-  $("#capHint").textContent = "按下打点，冻结当前时间";
+  $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
   $("#noteText").value = "";
   renderNotes(); renderSubs();
 });
@@ -1025,7 +1026,7 @@ function startEditNote(n){
 $("#cancelEditBtn").addEventListener("click", ()=>{
   editingNoteId = null; capturedTime = null;
   $("#noteText").value = ""; $("#capTime").textContent = "—";
-  $("#capHint").textContent = "按下打点，冻结当前时间";
+  $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
   $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
 });
 /* 语音输入（支持才显示） */
@@ -1053,23 +1054,55 @@ $("#cancelEditBtn").addEventListener("click", ()=>{
 })();
 
 /* ---------- 下载 ---------- */
+function openDownloaderApp(){
+  // best-effort：尝试直接拉起 1DM+ / 1DM；未安装则静默无事（链接已在剪贴板）
+  try{
+    const ifr = document.createElement("iframe");
+    ifr.style.display = "none";
+    ifr.src = "intent:#Intent;package=idm.internet.download.manager.plus;end";
+    document.body.appendChild(ifr);
+    setTimeout(()=>ifr.remove(), 2500);
+  }catch(e){}
+}
+async function currentProxy(){
+  // 返回当前可用代理（必要时先探测），没有则返回 null
+  let cands = proxyCandidates();
+  if(!cands.length) return null;
+  if(!proxyState.chosen || Date.now() - (proxyState.probedAt||0) > 30*60*1000){
+    await probeProxies();
+    cands = proxyCandidates();
+  }
+  return cands.find(p=>p.template===proxyState.chosen) || cands[0] || null;
+}
 async function downloadEpisode(sub, ep){
-  const title = epDisplayName(sub, ep) + " - " + ep.title;
+  const fname = (ep.title || "episode").replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
   if(settings.downloadMode==="share"){
-    if(navigator.share){
-      try{ await navigator.share({ title, url: ep.audioUrl }); return; }
-      catch(e){ if(e && e.name==="AbortError") return; }
-    }
-    try{ await navigator.clipboard.writeText(ep.audioUrl); toast("当前浏览器不支持分享，已复制音频链接，可粘贴到 1DM / NDM 下载"); }
-    catch(e){ toast("音频链接：" + ep.audioUrl); }
+    // 1DM 模式：复制链接（1DM 开「智能下载」会自动接管剪贴板链接）+ 尝试直接拉起 1DM
+    try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
+    openDownloaderApp();
+    toast("音频链接已复制，1DM（已开智能下载）会自动接管；否则在 1DM 里粘贴链接下载");
     return;
   }
-  const a = document.createElement("a");
-  a.href = ep.audioUrl;
-  a.download = ep.title.replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
-  a.target = "_blank"; a.rel = "noopener";
-  document.body.appendChild(a); a.click(); a.remove();
-  toast("已开始下载（跨站音频若被浏览器拦截，会改为打开音频页）");
+  // 浏览器直接下载：经代理取 blob 后真下载（带文件名）；失败回退到新标签页打开
+  const p = await currentProxy().catch(()=>null);
+  if(p){
+    try{
+      toast("正在经代理下载…");
+      const r = await fetch(viaProxy(p, ep.audioUrl));
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      const blob = await r.blob();
+      if(!blob.size) throw new Error("empty");
+      const obj = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = obj; a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(obj), 120000);
+      toast("已开始下载：" + fname);
+      return;
+    }catch(e){ /* 走下面的回退 */ }
+  }
+  window.open(ep.audioUrl, "_blank", "noopener");
+  toast("直接下载失败，已打开音频页（可长按手动保存）");
 }
 
 /* ---------- 导出 Markdown ---------- */
@@ -1190,7 +1223,7 @@ function renderSettingsInfo(){
   $("#dataCounts").textContent = subs.length + " 个订阅 · " + epCount + " 集缓存 · " + notes.length + " 条笔记";
 }
 $("#dlBrowser").addEventListener("click", ()=>{ settings.downloadMode = "browser"; saveSettings(); renderSettingsInfo(); toast("下载方式：浏览器直接下载"); });
-$("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：分享到外部下载器（1DM / NDM 等）"); });
+$("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：复制链接到 1DM"); });
 $("#workerSave").addEventListener("click", async ()=>{
   settings.workerTemplate = $("#workerInput").value.trim();
   saveSettings();
