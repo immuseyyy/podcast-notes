@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#b34700" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="播客速记" />
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjYjM0NzAwIi8+CiAgPHJlY3QgeD0iMjE2IiB5PSI4NCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjE5NiIgcng9IjQwIiBmaWxsPSIjZmZmN2VkIi8+CiAgPHBhdGggZD0iTTE0NiAyMzZhMTEwIDExMCAwIDAgMCAyMjAgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmN2VkIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cmVjdCB4PSIyNDEiIHk9IjM0MCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjU4IiByeD0iMTUiIGZpbGw9IiNmZmY3ZWQiLz4KICA8cGF0aCBkPSJNMzE2IDk2bDY0IDI2djExMGwtNjQtMjZ6IiBmaWxsPSIjZmZkOWE4Ii8+CiAgPHJlY3QgeD0iMTc2IiB5PSIzOTgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjYiIHJ4PSIxMyIgZmlsbD0iI2ZmZjdlZCIvPgo8L3N2Zz4K" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjYjM0NzAwIi8+CiAgPHJlY3QgeD0iMjE2IiB5PSI4NCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjE5NiIgcng9IjQwIiBmaWxsPSIjZmZmN2VkIi8+CiAgPHBhdGggZD0iTTE0NiAyMzZhMTEwIDExMCAwIDAgMCAyMjAgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmN2VkIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cmVjdCB4PSIyNDEiIHk9IjM0MCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjU4IiByeD0iMTUiIGZpbGw9IiNmZmY3ZWQiLz4KICA8cGF0aCBkPSJNMzE2IDk2bDY0IDI2djExMGwtNjQtMjZ6IiBmaWxsPSIjZmZkOWE4Ii8+CiAgPHJlY3QgeD0iMTc2IiB5PSIzOTgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjYiIHJ4PSIxMyIgZmlsbD0iI2ZmZjdlZCIvPgo8L3N2Zz4K" />
+<title>播客速记（独立版）</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#faf6f0;
+    --surface:#ffffff;
+    --surface2:#f3ede3;
+    --ink:#221a12;
+    --ink2:#6d5f4e;
+    --line:#e3d9c9;
+    --accent:#b34700;
+    --accent-ink:#ffffff;
+    --accent-soft:#fbe9d7;
+    --danger:#b3261e;
+    --ok:#2e7d32;
+    --dock:#fffdf9;
+    --shadow:0 2px 8px rgba(60,35,0,.12);
+    --kb:0px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17130e;
+      --surface:#221c15;
+      --surface2:#2b241a;
+      --ink:#f2e9db;
+      --ink2:#b3a48d;
+      --line:#3d3325;
+      --accent:#e8762c;
+      --accent-ink:#1d1206;
+      --accent-soft:#3d2712;
+      --danger:#f2b8b5;
+      --ok:#9fd6a4;
+      --dock:#1e1811;
+      --shadow:0 2px 8px rgba(0,0,0,.5);
+    }
+  }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:16px; line-height:1.55;
+    padding-bottom:calc(var(--dockh,0px) + env(safe-area-inset-bottom));
+  }
+  button{ font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0; }
+  input,textarea,select{ font:inherit; color:var(--ink); }
+  img{ display:block; }
+  .wrap{ max-width:760px; margin:0 auto; padding:0 14px; }
+
+  /* ---------- 顶部标签 ---------- */
+  .tabs{
+    position:sticky; top:0; z-index:30; background:var(--bg);
+    border-bottom:1px solid var(--line);
+  }
+  .tabs .wrap{ display:flex; gap:6px; padding-top:10px; padding-bottom:10px; align-items:center; }
+  .tab{
+    flex:1; text-align:center; padding:9px 4px; border-radius:10px;
+    background:var(--surface2); color:var(--ink2); font-weight:600; font-size:15px;
+  }
+  .tab[aria-selected="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .netdot{ width:9px; height:9px; border-radius:50%; background:var(--ink2); flex:none; margin-left:2px; }
+  .netdot.ok{ background:var(--ok); }
+  .netdot.bad{ background:var(--danger); }
+
+  main{ padding-top:14px; }
+  section.view{ display:none; }
+  section.view.on{ display:block; }
+
+  h2.sec{ font-size:19px; margin:4px 0 10px; font-weight:700; }
+  .hint{ color:var(--ink2); font-size:13px; }
+  .empty{
+    border:1.5px dashed var(--line); border-radius:12px; padding:26px 16px;
+    text-align:center; color:var(--ink2); background:var(--surface);
+  }
+
+  /* ---------- 添加订阅 ---------- */
+  .addbox{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow); margin-bottom:18px; }
+  .addtabs{ display:flex; gap:6px; margin-bottom:12px; }
+  .addtab{ flex:1; padding:8px 2px; border-radius:9px; background:var(--surface2); color:var(--ink2); font-size:14px; font-weight:600; text-align:center; }
+  .addtab[aria-selected="true"]{ background:var(--ink); color:var(--bg); }
+  .row{ display:flex; gap:8px; }
+  .row > *{ min-width:0; }
+  .txt{
+    flex:1; width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:10px;
+    background:var(--bg); outline:none;
+  }
+  .txt:focus{ border-color:var(--accent); }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding:11px 16px; border-radius:10px; background:var(--accent); color:var(--accent-ink);
+    font-weight:700; font-size:15px; white-space:nowrap;
+  }
+  .btn:disabled{ opacity:.55; }
+  .btn.ghost{ background:var(--surface2); color:var(--ink); }
+  .btn.small{ padding:7px 12px; font-size:13.5px; border-radius:8px; }
+  .btn.danger-ghost{ background:var(--surface2); color:var(--danger); }
+  .addpane{ display:none; }
+  .addpane.on{ display:block; }
+
+  .sres{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+  .sres-item{
+    display:flex; gap:11px; align-items:center; text-align:left; width:100%;
+    background:var(--surface2); border-radius:11px; padding:9px 11px;
+  }
+  .cover{ width:52px; height:52px; border-radius:9px; object-fit:cover; background:var(--accent-soft); flex:none; }
+  .cover.sm{ width:40px; height:40px; border-radius:7px; }
+  .sres-item .t{ font-weight:650; font-size:15px; line-height:1.35; }
+  .sres-item .a{ color:var(--ink2); font-size:13px; }
+
+  /* ---------- 订阅与单集 ---------- */
+  .sub{ background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+  .sub-head{ display:flex; gap:11px; align-items:center; padding:12px; }
+  .sub-head .meta{ flex:1; }
+  .sub-head .name{ font-weight:700; font-size:16.5px; line-height:1.35; }
+  .sub-head .sub2{ color:var(--ink2); font-size:12.5px; margin-top:1px; }
+  .iconbtn{
+    width:38px; height:38px; border-radius:9px; background:var(--surface2);
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+  }
+  .iconbtn svg{ width:19px; height:19px; }
+  .iconbtn:active{ background:var(--accent-soft); }
+  .eps{ border-top:1px solid var(--line); display:none; }
+  .eps.on{ display:block; }
+  .ep{
+    display:flex; gap:10px; align-items:flex-start; padding:11px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .ep:last-child{ border-bottom:none; }
+  .ep.playing{ background:var(--accent-soft); }
+  .ep .emain{ flex:1; }
+  .ep .et{ font-weight:600; font-size:15px; line-height:1.4; }
+  .ep .em{ color:var(--ink2); font-size:12.5px; margin-top:2px; display:flex; gap:10px; flex-wrap:wrap; }
+  .ep .acts{ display:flex; gap:6px; flex:none; }
+  .playbtn{
+    width:42px; height:42px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+  }
+  .playbtn svg{ width:19px; height:19px; }
+  .spin{ display:inline-block; width:15px; height:15px; border:2.5px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:sp 0.8s linear infinite; vertical-align:-2px; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .spin{ animation:none; } }
+
+  /* ---------- 笔记 ---------- */
+  .note{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 13px; margin-bottom:10px; }
+  .note .nmeta{ color:var(--ink2); font-size:12.5px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .note .nbody{ margin-top:6px; white-space:pre-wrap; word-break:break-word; font-size:15.5px; }
+  .timechip{
+    background:var(--accent-soft); color:var(--accent); font-weight:700; border-radius:7px;
+    padding:2px 9px; font-size:13.5px; font-variant-numeric:tabular-nums;
+  }
+  .note .nacts{ margin-top:9px; display:flex; gap:8px; }
+  .toolbar{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+
+  /* ---------- 设置 ---------- */
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:15px; margin-bottom:14px; }
+  .card h3{ margin:0 0 6px; font-size:16px; }
+  .card p{ margin:6px 0; }
+  .seg{ display:flex; gap:6px; margin-top:10px; }
+  .seg button{ flex:1; padding:10px 6px; border-radius:9px; background:var(--surface2); color:var(--ink2); font-weight:600; font-size:14px; }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .kv{ display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14.5px; }
+  .kv:last-child{ border-bottom:none; }
+  .kv b{ font-weight:650; text-align:right; }
+  label.flabel{ display:block; font-size:13.5px; color:var(--ink2); margin:10px 0 5px; font-weight:600; }
+
+  /* ---------- 底部播放器坞 ---------- */
+  #dock{
+    position:fixed; left:0; right:0; bottom:var(--kb); z-index:40;
+    background:var(--dock); border-top:1px solid var(--line); box-shadow:0 -2px 10px rgba(60,35,0,.10);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  #dock .inner{ max-width:760px; margin:0 auto; padding:9px 14px 11px; }
+  #dock .nowrow{ display:flex; gap:10px; align-items:center; }
+  #dock .ntitle{ flex:1; font-weight:650; font-size:14.5px; line-height:1.35; max-height:2.7em; overflow:hidden; }
+  #dock .nsub{ color:var(--ink2); font-size:12px; font-weight:400; }
+  #seek{ width:100%; margin:9px 0 2px; accent-color:var(--accent); height:26px; }
+  .timerow{ display:flex; justify-content:space-between; color:var(--ink2); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .ctlrow{ display:flex; align-items:center; justify-content:space-between; gap:4px; margin-top:2px; }
+  .ctlbtn{ display:flex; flex-direction:column; align-items:center; gap:0; padding:5px 7px; border-radius:9px; color:var(--ink); font-size:11px; }
+  .ctlbtn svg{ width:23px; height:23px; }
+  .ctlbtn:active{ background:var(--surface2); }
+  #btnPlay{
+    width:56px; height:56px; border-radius:50%; background:var(--accent); color:var(--accent-ink);
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+  }
+  #btnPlay svg{ width:26px; height:26px; }
+  #speedBtn{ font-weight:700; font-size:14.5px; min-width:48px; text-align:center; padding:8px 4px; border-radius:9px; background:var(--surface2); }
+  #composer{ display:none; border-top:1px solid var(--line); margin-top:9px; padding-top:10px; }
+  #composer.on{ display:block; }
+  #composer .capline{ display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+  #capBtn{
+    background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:16.5px;
+    border-radius:12px; padding:13px 20px; display:inline-flex; align-items:center; gap:8px;
+  }
+  #capBtn svg{ width:20px; height:20px; }
+  #capTime{ font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--accent); }
+  #noteText{
+    width:100%; border:1.5px solid var(--line); border-radius:11px; background:var(--bg);
+    padding:10px 12px; resize:vertical; min-height:74px; outline:none;
+  }
+  #noteText:focus{ border-color:var(--accent); }
+  #composer .saverow{ display:flex; gap:8px; margin-top:9px; align-items:center; }
+  #composer .saverow .sp{ flex:1; }
+  .mic-on{ background:var(--danger) !important; color:#fff !important; }
+
+  #toast{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dockh,90px) + var(--kb) + 14px);
+    z-index:60; background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:10px;
+    font-size:14px; max-width:88vw; text-align:center; box-shadow:var(--shadow);
+    opacity:0; pointer-events:none; transition:opacity .18s;
+  }
+  #toast.show{ opacity:1; }
+  #confirmMask[hidden]{ display:none !important; }
+  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<header class="tabs">
+  <div class="wrap" role="tablist" aria-label="主导航">
+    <button class="tab" role="tab" id="tab-subs" aria-selected="true" data-view="subs">订阅</button>
+    <button class="tab" role="tab" id="tab-notes" aria-selected="false" data-view="notes">笔记 <span id="noteCount"></span></button>
+    <button class="tab" role="tab" id="tab-settings" aria-selected="false" data-view="settings">设置</button>
+    <span class="netdot" id="netDot" title="代理状态"></span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ 订阅 ============ -->
+  <section class="view on" id="view-subs" aria-labelledby="tab-subs">
+    <div class="addbox">
+      <div class="addtabs" role="tablist" aria-label="添加方式">
+        <button class="addtab" data-addtab="search" aria-selected="true">搜节目名</button>
+        <button class="addtab" data-addtab="rss" aria-selected="false">RSS 链接</button>
+        <button class="addtab" data-addtab="xyz" aria-selected="false">小宇宙单集</button>
+      </div>
+
+      <div class="addpane on" id="pane-search">
+        <div class="row">
+          <input class="txt" id="searchInput" type="search" enterkeyhint="search" placeholder="输入节目名，如：商业就是这样" autocomplete="off" />
+          <button class="btn" id="searchBtn">搜索</button>
+        </div>
+        <div class="sres" id="searchResults"></div>
+      </div>
+
+      <div class="addpane" id="pane-rss">
+        <div class="row">
+          <input class="txt" id="rssInput" type="url" enterkeyhint="go" placeholder="粘贴 RSS 地址，如 https://…" autocomplete="off" />
+          <button class="btn" id="rssBtn">订阅</button>
+        </div>
+        <p class="hint">通过代理链抓取并解析，每个订阅保留最近 50 集。</p>
+      </div>
+
+      <div class="addpane" id="pane-xyz">
+        <div class="row">
+          <input class="txt" id="xyzInput" type="url" enterkeyhint="go" placeholder="粘贴小宇宙单集链接 xiaoyuzhoufm.com/episode/…" autocomplete="off" />
+          <button class="btn" id="xyzBtn">导入</button>
+        </div>
+        <p class="hint">导入的单集会归入「小宇宙导入」分组；付费/加密单集无法导入。</p>
+      </div>
+      <p class="hint" id="addStatus" role="status"></p>
+    </div>
+
+    <div id="subList"></div>
+  </section>
+
+  <!-- ============ 笔记 ============ -->
+  <section class="view" id="view-notes" aria-labelledby="tab-notes">
+    <div class="toolbar">
+      <button class="btn" id="exportMdBtn">导出 Markdown</button>
+      <span class="hint" style="align-self:center">按播客 → 单集分组，含时间点与音频链接，可直接放进 Obsidian。</span>
+    </div>
+    <div id="noteList"></div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section class="view" id="view-settings" aria-labelledby="tab-settings">
+    <div class="card">
+      <h3>抓取代理</h3>
+      <p class="hint">抓 RSS 和小宇宙页面需要经过代理绕过跨域限制。App 启动时会自动测速并选用最快的，失败时自动切换下一个。</p>
+      <div class="kv"><span>当前代理</span><b id="proxyNow">探测中…</b></div>
+      <div class="kv"><span>同源预抓数据</span><b id="feedsInfo">未检测到</b></div>
+      <label class="flabel" for="workerInput">自建 Cloudflare Worker 地址模板（可选，留空则只用公共代理）</label>
+      <input class="txt" id="workerInput" type="url" placeholder="https://你的worker域名/?url={url}" autocomplete="off" />
+      <p class="hint">模板里的 <b>{url}</b> 会被替换为目标地址（已做 URL 编码）。保存后立即重新探测。</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" id="workerSave">保存并重新探测</button>
+        <button class="btn small ghost" id="proxyRetest">重新测速</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>下载方式</h3>
+      <p class="hint">点单集或播放器上的下载按钮时如何处理音频。</p>
+      <div class="seg" role="group" aria-label="下载方式">
+        <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
+        <button id="dlShare" aria-pressed="false">分享到外部下载器</button>
+      </div>
+      <p class="hint" id="dlHint">分享方式会调起系统分享面板，可选 1DM / NDM 等外部下载器；不支持分享时自动改为复制链接。</p>
+    </div>
+
+    <div class="card">
+      <h3>备份 / 恢复</h3>
+      <p class="hint">全部数据（订阅、单集缓存、笔记、设置）只存在这台设备的浏览器里。清浏览器数据会丢失，请定期导出备份。</p>
+      <div class="row" style="margin-top:10px; flex-wrap:wrap">
+        <button class="btn small" id="backupBtn">导出备份 JSON</button>
+        <button class="btn small ghost" id="restoreBtn">导入备份 JSON</button>
+        <input type="file" id="restoreFile" accept="application/json,.json" class="sr" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>装到手机上（可选）</h3>
+      <p class="hint">把本页和下面两个文件放同一个目录托管（如 GitHub Pages），即可作为 PWA 安装到主屏幕：manifest 供安装识别，sw.js 负责离线缓存应用外壳。当前页面已内嵌清单，缺 sw.js 时仅离线缓存不可用，其余功能不受影响。</p>
+      <div class="row" style="margin-top:10px; flex-wrap:wrap">
+        <button class="btn small ghost" id="dlManifestBtn">下载 manifest.webmanifest</button>
+        <button class="btn small ghost" id="dlSwBtn">下载 sw.js</button>
+      </div>
+      <div class="kv" style="margin-top:8px"><span>数据占用</span><b id="dataSize">—</b></div>
+      <div class="kv"><span>订阅 / 笔记</span><b id="dataCounts">—</b></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ 播放器坞 ============ -->
+<div id="dock" hidden>
+  <div class="inner">
+    <div class="nowrow">
+      <img class="cover sm" id="dockCover" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+      <div class="ntitle"><span id="dockTitle">未在播放</span><div class="nsub" id="dockSub"></div></div>
+      <button class="iconbtn" id="dockDl" aria-label="下载本集" title="下载本集"></button>
+    </div>
+    <input type="range" id="seek" min="0" max="1000" value="0" aria-label="播放进度" />
+    <div class="timerow"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+    <div class="ctlrow">
+      <button class="ctlbtn" id="btnBack30" aria-label="后退 30 秒"></button>
+      <button class="ctlbtn" id="btnBack15" aria-label="后退 15 秒"></button>
+      <button id="btnPlay" aria-label="播放或暂停"></button>
+      <button class="ctlbtn" id="btnFwd15" aria-label="前进 15 秒"></button>
+      <button class="ctlbtn" id="btnFwd30" aria-label="前进 30 秒"></button>
+      <button id="speedBtn" aria-label="切换倍速">1×</button>
+    </div>
+    <div id="composer">
+      <div class="capline">
+        <button id="capBtn"></button>
+        <span id="capTime">—</span>
+        <span class="hint" id="capHint">按下打点，冻结当前时间</span>
+      </div>
+      <textarea id="noteText" rows="3" enterkeyhint="enter" placeholder="记一句想法…（回车换行）"></textarea>
+      <div class="saverow">
+        <button class="btn small ghost" id="micBtn" hidden></button>
+        <span class="sp"></span>
+        <button class="btn small ghost" id="cancelEditBtn" hidden>取消编辑</button>
+        <button class="btn small" id="saveNoteBtn">保存笔记</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confirmMask" hidden style="position:fixed;inset:0;z-index:80;background:rgba(20,12,4,.45);display:flex;align-items:center;justify-content:center;padding:22px">
+  <div style="background:var(--surface);color:var(--ink);border-radius:14px;padding:18px;max-width:420px;width:100%;box-shadow:var(--shadow)">
+    <p id="confirmMsg" style="margin:0 0 14px;font-size:15.5px"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn small ghost" id="confirmNo">取消</button>
+      <button class="btn small" id="confirmYes">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+"use strict";
+/* =====================================================================
+   播客速记（独立版）— 纯前端 PWA，全部数据存 localStorage（podmemo.*）
+   ===================================================================== */
+
+/* ---------- 图标（内联 SVG） ---------- */
+const I = {
+  play:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4.5 19.5h15"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9.5 7V5h5v2m-7.5 0l1 13h8l1-13"/></svg>',
+  chevD:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>',
+  chevU:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 14.5l6-6 6 6"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5A8 8 0 1 1 4 12.5"/><path d="M4 4v5h5"/></svg>',
+  fwd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5A8 8 0 1 0 20 12.5"/><path d="M20 4v5h-5"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-10.4A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.6C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10.4" r="2.4" fill="var(--accent)"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4.5L20 8.5a2.1 2.1 0 0 0-3-3L5.5 17z"/><path d="M13.5 7l3 3"/></svg>'
+};
+
+/* ---------- 工具 ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function fmtTime(sec){
+  if(!isFinite(sec) || sec==null) return "0:00";
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  return (h>0 ? h+":" + String(m).padStart(2,"0") : m) + ":" + String(s).padStart(2,"0");
+}
+function fmtDate(iso){
+  if(!iso) return "";
+  const d = new Date(iso);
+  if(isNaN(d)) return "";
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function fmtDur(sec){
+  if(!sec && sec!==0) return "";
+  if(typeof sec === "string"){ const n = parseDurStr(sec); if(n==null) return ""; sec = n; }
+  if(!isFinite(sec)) return "";
+  return "时长 " + fmtTime(sec);
+}
+function parseDurStr(s){
+  s = String(s).trim(); if(!s) return null;
+  if(/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  const p = s.split(":").map(Number);
+  if(p.some(isNaN)) return null;
+  return p.reduce((a,n)=>a*60+n,0);
+}
+let toastTimer = null;
+function toast(msg, ms){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), ms || 2600);
+}
+let confirmResolve = null;
+function uiConfirm(msg){
+  if(!msg) return Promise.resolve(false);
+  $("#confirmMsg").textContent = msg;
+  $("#confirmMask").hidden = false;
+  return new Promise(res=>{ confirmResolve = res; });
+}
+function closeConfirm(v){
+  $("#confirmMask").hidden = true;
+  if(confirmResolve){ const r = confirmResolve; confirmResolve = null; r(v); }
+}
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("#confirmYes").addEventListener("click", ()=>closeConfirm(true));
+  $("#confirmNo").addEventListener("click", ()=>closeConfirm(false));
+  $("#confirmMask").addEventListener("click", e=>{ if(e.target.id==="confirmMask") closeConfirm(false); });
+});
+function downloadFile(name, content, type){
+  const blob = content instanceof Blob ? content : new Blob([content], {type: type || "text/plain;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error(label || "超时")), ms))
+  ]);
+}
+async function fetchText(url, ms){
+  const ctl = new AbortController();
+  const to = setTimeout(()=>ctl.abort(), ms || 15000);
+  try{
+    const r = await fetch(url, {signal: ctl.signal});
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return await r.text();
+  } finally { clearTimeout(to); }
+}
+
+/* ---------- 存储（统一命名空间 podmemo.*） ---------- */
+const LS = { subs:"podmemo.subs.v1", notes:"podmemo.notes.v1", settings:"podmemo.settings.v1", proxy:"podmemo.proxy.v1" };
+function lsGet(key, dflt){
+  try{ const v = localStorage.getItem(key); return v==null ? dflt : JSON.parse(v); }
+  catch(e){ return dflt; }
+}
+function lsSet(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e){ toast("本地存储空间不足，数据可能未保存"); }
+}
+let subs = lsGet(LS.subs, []);            // [{id,name,author,cover,feedUrl,group,episodes:[{id,title,pubDate,duration,audioUrl,cover}],updatedAt}]
+let notes = lsGet(LS.notes, []);          // [{id,subId,subName,epId,epTitle,audioUrl,time,text,createdAt}]
+let settings = Object.assign({ workerTemplate:"", downloadMode:"browser" }, lsGet(LS.settings, {}));
+let proxyState = Object.assign({ chosen:"", probedAt:0 }, lsGet(LS.proxy, {}));
+const saveSubs = ()=>lsSet(LS.subs, subs);
+const saveNotes = ()=>lsSet(LS.notes, notes);
+const saveSettings = ()=>lsSet(LS.settings, settings);
+const saveProxy = ()=>lsSet(LS.proxy, proxyState);
+const MAX_EPS = 50;
+
+/* ---------- 代理链 ---------- */
+const BUILTIN_PROXIES = [
+  { name:"allorigins（公共）", template:"https://api.allorigins.win/raw?url={url}" }
+];
+let sameOriginProxies = [];   // 来自同源 proxies.json
+function normalizeTemplate(raw){
+  raw = String(raw||"").trim();
+  if(!raw) return "";
+  if(raw.indexOf("{url}") >= 0) return raw;
+  if(/^https?:\/\/[^/?#]+$/.test(raw)) return raw + "/?url={url}";
+  if(/[?&]url=$/.test(raw)) return raw + "{url}";
+  return raw + (raw.indexOf("?")>=0 ? "&" : "?") + "url={url}";
+}
+function proxyCandidates(){
+  const list = [];
+  const seen = new Set();
+  const push = (name, template)=>{
+    template = normalizeTemplate(template);
+    if(!template || seen.has(template)) return;
+    seen.add(template);
+    list.push({ name, template });
+  };
+  if(settings.workerTemplate) push("自建 Worker", settings.workerTemplate);
+  sameOriginProxies.forEach(p=>push(p.name || "同源名单", p.template));
+  BUILTIN_PROXIES.forEach(p=>push(p.name, p.template));
+  // 上次选中的排最前
+  if(proxyState.chosen){
+    const i = list.findIndex(p=>p.template===proxyState.chosen);
+    if(i>0){ const [it] = list.splice(i,1); list.unshift(it); }
+  }
+  return list;
+}
+function viaProxy(p, target){ return p.template.replace("{url}", encodeURIComponent(target)); }
+const PROBE_TARGET = "https://itunes.apple.com/search?term=a&media=podcast&limit=1&country=CN";
+
+let proxyProbing = null;
+function probeProxies(){
+  if(proxyProbing) return proxyProbing;
+  proxyProbing = (async ()=>{
+    const cands = proxyCandidates();
+    updateNetDot("probe");
+    if(!cands.length){ updateProxyUI("无可用代理"); updateNetDot("bad"); return null; }
+    const attempts = cands.map(p =>
+      withTimeout(fetchText(viaProxy(p, PROBE_TARGET), 5000), 5200, "探测超时")
+        .then(()=>p)
+    );
+    try{
+      const winner = await Promise.any(attempts);
+      proxyState.chosen = winner.template; proxyState.probedAt = Date.now(); saveProxy();
+      updateProxyUI(winner.name); updateNetDot("ok");
+      return winner;
+    }catch(e){
+      updateProxyUI("全部代理不可用"); updateNetDot("bad");
+      return null;
+    } finally { proxyProbing = null; }
+  })();
+  return proxyProbing;
+}
+/* 经代理链取文本：从已选代理开始，失败自动切下一个 */
+async function fetchViaProxies(target, timeoutMs){
+  let cands = proxyCandidates();
+  if(!cands.length) throw new Error("没有可用代理");
+  if(!proxyState.chosen || Date.now() - (proxyState.probedAt||0) > 30*60*1000){
+    const w = await probeProxies();
+    cands = proxyCandidates();
+    if(!w && !proxyState.chosen) throw new Error("代理全部不可用，请检查网络或在设置里填写自建 Worker");
+  }
+  let lastErr = null;
+  for(const p of cands){
+    try{
+      const txt = await fetchText(viaProxy(p, target), timeoutMs || 20000);
+      if(proxyState.chosen !== p.template){
+        proxyState.chosen = p.template; proxyState.probedAt = Date.now(); saveProxy();
+        updateProxyUI(p.name); updateNetDot("ok");
+      }
+      return txt;
+    }catch(e){ lastErr = e; }
+  }
+  updateNetDot("bad");
+  throw lastErr || new Error("代理抓取失败");
+}
+/* 直连优先，失败走代理链（用于 iTunes 搜索） */
+async function fetchDirectOrProxy(target, timeoutMs){
+  try{ return await fetchText(target, timeoutMs || 12000); }
+  catch(e){ return await fetchViaProxies(target, timeoutMs ? timeoutMs+8000 : 20000); }
+}
+function updateNetDot(state){
+  const d = $("#netDot");
+  d.className = "netdot" + (state==="ok" ? " ok" : state==="bad" ? " bad" : "");
+  d.title = state==="ok" ? "代理可用" : state==="bad" ? "代理不可用，点设置查看" : "代理探测中";
+}
+function updateProxyUI(name){
+  const cands = proxyCandidates();
+  const cur = cands.find(p=>p.template===proxyState.chosen);
+  $("#proxyNow").textContent = name || (cur ? cur.name : "未选定");
+}
+
+/* ---------- 同源优先：data/feeds.json + proxies.json ---------- */
+let feedsInfoText = "未检测到";
+async function loadSameOrigin(){
+  // proxies.json（仓库根目录）
+  try{
+    const txt = await fetchText("proxies.json", 4000);
+    const j = JSON.parse(txt);
+    if(j && Array.isArray(j.proxies)){
+      sameOriginProxies = j.proxies.filter(p=>p && p.template).map(p=>({name:p.name||"同源名单", template:p.template}));
+    }
+  }catch(e){ /* 不存在则忽略 */ }
+  // data/feeds.json（GitHub Actions 定时预抓）
+  try{
+    const txt = await fetchText("data/feeds.json", 5000);
+    const j = JSON.parse(txt);
+    if(j && Array.isArray(j.feeds) && j.feeds.length){
+      let merged = 0;
+      j.feeds.forEach(f=>{
+        if(!f || !f.feedUrl) return;
+        const eps = (f.episodes||[]).slice(0, MAX_EPS).map(ep=>({
+          id: ep.id || ep.audioUrl || uid(),
+          title: ep.title || "未命名单集",
+          pubDate: ep.pubDate || "",
+          duration: (ep.duration!=null ? ep.duration : null),
+          audioUrl: ep.audioUrl || "",
+          cover: ep.cover || f.cover || ""
+        })).filter(ep=>ep.audioUrl);
+        const local = subs.find(s=>s.feedUrl===f.feedUrl);
+        if(local){
+          if(eps.length){ local.episodes = eps; if(f.name) local.name = f.name; local.updatedAt = f.updatedAt || local.updatedAt; merged++; }
+        }else{
+          subs.push({
+            id: f.id || uid(), name: f.name || "未命名节目", author: f.author || "",
+            cover: f.cover || "", feedUrl: f.feedUrl, group: "",
+            episodes: eps, updatedAt: f.updatedAt || ""
+          });
+          merged++;
+        }
+      });
+      if(merged){ saveSubs(); feedsInfoText = "已载入 " + merged + " 个节目的预抓数据"; }
+      else feedsInfoText = "文件存在但无可用数据";
+    }
+  }catch(e){ /* 不存在则忽略，走实时抓取 */ }
+  $("#feedsInfo").textContent = feedsInfoText;
+}
+
+/* ---------- RSS 解析 ---------- */
+function tagText(parent, tag){
+  const el = parent.getElementsByTagName(tag)[0];
+  return el ? (el.textContent || "").trim() : "";
+}
+function parseFeed(xmlText, feedUrl){
+  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  if(doc.getElementsByTagName("parsererror").length) throw new Error("RSS 解析失败，内容不是有效的订阅源");
+  const channel = doc.getElementsByTagName("channel")[0] || doc.documentElement;
+  let name = tagText(channel, "title");
+  let cover = "";
+  const imgEl = channel.getElementsByTagName("itunes:image")[0];
+  if(imgEl) cover = imgEl.getAttribute("href") || "";
+  if(!cover){
+    const im = channel.getElementsByTagName("image")[0];
+    if(im) cover = tagText(im, "url");
+  }
+  const author = tagText(channel, "itunes:author") || tagText(channel, "author") || tagText(channel, "managingEditor");
+  const items = Array.from(doc.getElementsByTagName("item"));
+  const episodes = [];
+  for(const it of items){
+    const enc = it.getElementsByTagName("enclosure")[0];
+    const audioUrl = enc ? (enc.getAttribute("url") || "") : "";
+    if(!audioUrl) continue;
+    let dur = tagText(it, "itunes:duration");
+    dur = dur ? parseDurStr(dur) : null;
+    let epCover = "";
+    const ei = it.getElementsByTagName("itunes:image")[0];
+    if(ei) epCover = ei.getAttribute("href") || "";
+    episodes.push({
+      id: tagText(it, "guid") || audioUrl,
+      title: tagText(it, "title") || "未命名单集",
+      pubDate: tagText(it, "pubDate") || "",
+      duration: dur,
+      audioUrl: audioUrl,
+      cover: epCover || cover
+    });
+    if(episodes.length >= MAX_EPS) break;
+  }
+  if(!name && !episodes.length) throw new Error("没有从该地址解析出节目信息");
+  return { name: name || "未命名节目", author, cover, episodes };
+}
+async function subscribeByFeedUrl(feedUrl, preset){
+  const xml = await fetchViaProxies(feedUrl, 25000);
+  const feed = parseFeed(xml, feedUrl);
+  const existing = subs.find(s=>s.feedUrl===feedUrl);
+  if(existing){
+    existing.name = feed.name; existing.author = feed.author || existing.author;
+    existing.cover = feed.cover || existing.cover;
+    existing.episodes = feed.episodes; existing.updatedAt = new Date().toISOString();
+    saveSubs(); renderSubs();
+    return { sub: existing, isNew:false };
+  }
+  const sub = {
+    id: uid(), name: (preset && preset.name) || feed.name,
+    author: (preset && preset.author) || feed.author || "",
+    cover: (preset && preset.cover) || feed.cover || "",
+    feedUrl, group:"", episodes: feed.episodes, updatedAt: new Date().toISOString()
+  };
+  subs.unshift(sub); saveSubs(); renderSubs();
+  return { sub, isNew:true };
+}
+async function refreshSub(sub, silent){
+  try{
+    const xml = await fetchViaProxies(sub.feedUrl, 25000);
+    const feed = parseFeed(xml, sub.feedUrl);
+    sub.name = feed.name || sub.name;
+    sub.cover = feed.cover || sub.cover;
+    sub.episodes = feed.episodes;
+    sub.updatedAt = new Date().toISOString();
+    saveSubs(); renderSubs();
+    if(!silent) toast("「" + sub.name + "」已刷新，共 " + feed.episodes.length + " 集");
+  }catch(e){
+    if(!silent) toast("刷新失败：" + (e.message || e));
+  }
+}
+
+/* ---------- 小宇宙单集导入 ---------- */
+const XYZ_GROUP = "小宇宙导入";
+function xyzIdFromUrl(raw){
+  const m = String(raw||"").match(/xiaoyuzhoufm\.com\/episode\/([0-9a-fA-F]{24})/);
+  return m ? m[1] : null;
+}
+async function importXiaoyuzhou(rawUrl){
+  const id = xyzIdFromUrl(rawUrl);
+  if(!id) throw new Error("没识别出小宇宙单集链接，请粘贴形如 xiaoyuzhoufm.com/episode/… 的链接");
+  const pageUrl = "https://www.xiaoyuzhoufm.com/episode/" + id;
+  const html = await fetchViaProxies(pageUrl, 25000);
+  const m = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if(!m) throw new Error("页面结构变化，未找到单集数据");
+  let data; try{ data = JSON.parse(m[1]); }catch(e){ throw new Error("单集数据解析失败"); }
+  const ep = data && data.props && data.props.pageProps && data.props.pageProps.episode;
+  if(!ep) throw new Error("未找到单集信息");
+  if(ep.isPrivateMedia || !ep.enclosure || !ep.enclosure.url){
+    throw new Error("该单集为付费/加密内容，无法导入");
+  }
+  const epTitle = ep.title || "未命名单集";
+  const podName = (ep.podcast && ep.podcast.title) || "小宇宙节目";
+  const cover = (ep.image && (ep.image.picUrl || ep.image.thumbnailUrl)) ||
+                (ep.podcast && ep.podcast.image && (ep.podcast.image.picUrl || ep.podcast.image.thumbnailUrl)) || "";
+  let group = subs.find(s=>s.group===XYZ_GROUP);
+  if(!group){
+    group = { id:"xyz-group", name:XYZ_GROUP, author:"从小宇宙粘贴链接导入的单集", cover:"", feedUrl:"", group:XYZ_GROUP, episodes:[], updatedAt:"" };
+    subs.push(group);
+  }
+  if(group.episodes.some(e=>e.id===id)){ toast("这集已经导入过了"); return group; }
+  group.episodes.unshift({
+    id, title: epTitle, pubDate: ep.pubDate || "",
+    duration: (typeof ep.duration==="number" ? ep.duration : null),
+    audioUrl: ep.enclosure.url, cover,
+    podName
+  });
+  group.updatedAt = new Date().toISOString();
+  saveSubs(); renderSubs();
+  toast("已导入「" + epTitle + "」（" + podName + "）");
+  return group;
+}
+
+/* ---------- 渲染：订阅与单集 ---------- */
+const openSubs = new Set();
+let nowPlaying = null; // {subId, epId}
+function coverImg(url, cls){
+  if(!url) return '<img class="' + (cls||"cover") + '" alt="" aria-hidden="true" />';
+  return '<img class="' + (cls||"cover") + '" src="' + esc(url) + '" alt="" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer" onerror="this.removeAttribute(\'src\')" />';
+}
+function epDisplayName(sub, ep){ return ep.podName || sub.name; }
+function renderSubs(){
+  const box = $("#subList");
+  if(!subs.length){
+    box.innerHTML = '<div class="empty">还没有订阅。<br/>用上面的搜索、RSS 或小宇宙链接添加第一个节目。</div>';
+    return;
+  }
+  box.innerHTML = subs.map(sub=>{
+    const isXyz = sub.group===XYZ_GROUP;
+    const epsHtml = sub.episodes.map(ep=>{
+      const playing = nowPlaying && nowPlaying.subId===sub.id && nowPlaying.epId===ep.id;
+      return '<div class="ep' + (playing?" playing":"") + '" data-ep="' + esc(ep.id) + '">' +
+        '<button class="playbtn" data-act="play" aria-label="播放">' + (playing && !audio.paused ? I.pause : I.play) + '</button>' +
+        '<div class="emain"><div class="et">' + esc(ep.title) + '</div>' +
+        '<div class="em">' +
+          (isXyz && ep.podName ? '<span>' + esc(ep.podName) + '</span>' : '') +
+          (ep.pubDate ? '<span>' + esc(fmtDate(ep.pubDate) || ep.pubDate) + '</span>' : '') +
+          (ep.duration!=null ? '<span>' + esc(fmtDur(ep.duration)) + '</span>' : '') +
+          '<span>' + notes.filter(n=>n.epId===ep.id).length + ' 条笔记</span>' +
+        '</div></div>' +
+        '<div class="acts"><button class="iconbtn" data-act="dl" aria-label="下载本集" title="下载本集">' + I.dl + '</button></div>' +
+      '</div>';
+    }).join("");
+    return '<div class="sub" data-sub="' + esc(sub.id) + '">' +
+      '<div class="sub-head">' + coverImg(sub.cover || (sub.episodes[0] && sub.episodes[0].cover)) +
+        '<div class="meta"><div class="name">' + esc(sub.name) + '</div>' +
+        '<div class="sub2">' + esc(sub.author || "") + (sub.author ? " · " : "") + sub.episodes.length + ' 集' +
+          (isXyz ? "" : "（保留最近 50 集）") +
+          (sub.updatedAt ? " · 更新于 " + esc(fmtDate(sub.updatedAt)) : "") + '</div></div>' +
+        (!isXyz ? '<button class="iconbtn" data-act="refresh" aria-label="刷新" title="刷新">' + I.refresh + '</button>' : '') +
+        '<button class="iconbtn" data-act="toggle" aria-label="展开或收起单集">' + (openSubs.has(sub.id) ? I.chevU : I.chevD) + '</button>' +
+        '<button class="iconbtn" data-act="unsub" aria-label="取消订阅" title="取消订阅">' + I.trash + '</button>' +
+      '</div>' +
+      '<div class="eps' + (openSubs.has(sub.id) ? " on" : "") + '">' +
+        (sub.episodes.length ? epsHtml : '<div class="ep"><div class="emain hint">暂无单集</div></div>') +
+      '</div></div>';
+  }).join("");
+}
+$("#subList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-act]");
+  if(!btn) return;
+  const subEl = e.target.closest("[data-sub]");
+  const sub = subs.find(s=>s.id===subEl.dataset.sub);
+  if(!sub) return;
+  const act = btn.dataset.act;
+  if(act==="toggle"){ openSubs.has(sub.id) ? openSubs.delete(sub.id) : openSubs.add(sub.id); renderSubs(); return; }
+  if(act==="unsub"){
+    const doDel = ()=>{
+      subs = subs.filter(s=>s.id!==sub.id); saveSubs(); renderSubs();
+      toast("已取消订阅「" + sub.name + "」（相关笔记保留）");
+    };
+    if(sub.group===XYZ_GROUP){
+      uiConfirm("删除「小宇宙导入」分组及其中全部单集？已记的笔记会保留。").then(ok=>{ if(ok) doDel(); });
+    } else doDel();
+    return;
+  }
+  if(act==="refresh"){ btn.innerHTML = '<span class="spin"></span>'; refreshSub(sub); return; }
+  const epEl = e.target.closest("[data-ep]");
+  const ep = sub.episodes.find(x=>x.id===epEl.dataset.ep);
+  if(!ep) return;
+  if(act==="play") playEpisode(sub, ep, 0, true);
+  if(act==="dl") downloadEpisode(sub, ep);
+});
+
+/* ---------- 渲染：笔记 ---------- */
+function renderNotes(){
+  $("#noteCount").textContent = notes.length ? "(" + notes.length + ")" : "";
+  const box = $("#noteList");
+  if(!notes.length){
+    box.innerHTML = '<div class="empty">还没有笔记。<br/>播放一集播客，点播放器旁的「打点」按钮冻结时间点，写一句想法保存即可。</div>';
+    return;
+  }
+  const sorted = notes.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  box.innerHTML = sorted.map(n =>
+    '<div class="note" data-note="' + esc(n.id) + '">' +
+      '<div class="nmeta"><span>' + esc(n.subName) + '</span><span>·</span><span>' + esc(n.epTitle) + '</span>' +
+      '<button class="timechip" data-nact="seek" title="跳回此处播放">' + fmtTime(n.time) + '</button></div>' +
+      '<div class="nbody">' + esc(n.text) + '</div>' +
+      '<div class="nacts">' +
+        '<button class="btn small ghost" data-nact="edit">' + I.edit + '编辑</button>' +
+        '<button class="btn small danger-ghost" data-nact="del">删除</button>' +
+      '</div></div>'
+  ).join("");
+}
+$("#noteList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-nact]");
+  if(!btn) return;
+  const el = e.target.closest("[data-note]");
+  const n = notes.find(x=>x.id===el.dataset.note);
+  if(!n) return;
+  const act = btn.dataset.nact;
+  if(act==="seek"){
+    const sub = subs.find(s=>s.id===n.subId);
+    const ep = sub && sub.episodes.find(x=>x.id===n.epId);
+    if(sub && ep){ playEpisode(sub, ep, n.time, true); }
+    else{
+      // 原订阅已删除：用笔记里存的音频链接直接播
+      playDetached(n);
+    }
+    switchView("subs");
+  }
+  if(act==="edit"){ startEditNote(n); switchView("subs"); }
+  if(act==="del"){
+    notes = notes.filter(x=>x.id!==n.id); saveNotes(); renderNotes(); renderSubs();
+    toast("笔记已删除");
+  }
+});
+
+/* ---------- 播放器 ---------- */
+const audio = $("#audio");
+let current = null;        // {sub, ep}
+let seeking = false;
+let pendingSeek = null;
+const SPEEDS = [1, 1.25, 1.5, 2, 0.75];
+function setDockVisible(){
+  const dock = $("#dock");
+  dock.hidden = !current;
+  document.documentElement.style.setProperty("--dockh", current ? dock.offsetHeight + "px" : "0px");
+}
+function playEpisode(sub, ep, startAt, autoplay){
+  const sameEp = current && current.ep.id===ep.id && current.sub.id===sub.id;
+  current = { sub, ep };
+  nowPlaying = { subId: sub.id, epId: ep.id };
+  if(!sameEp){
+    audio.src = ep.audioUrl;
+    audio.playbackRate = parseFloat($("#speedBtn").textContent) || 1;
+    pendingSeek = startAt || 0;
+  } else if(startAt){
+    audio.currentTime = startAt;
+  }
+  $("#dockTitle").textContent = ep.title;
+  $("#dockSub").textContent = epDisplayName(sub, ep);
+  const cv = $("#dockCover");
+  if(ep.cover || sub.cover){ cv.src = ep.cover || sub.cover; } else { cv.removeAttribute("src"); }
+  $("#composer").classList.add("on");
+  if(!editingNoteId){ capturedTime = null; $("#capTime").textContent = "—"; $("#capHint").textContent = "按下打点，冻结当前时间"; }
+  setDockVisible(); renderSubs(); updatePlayBtn(); setupMediaSession();
+  if(autoplay){ const p = audio.play(); if(p) p.catch(()=>toast("播放失败：音频地址不可达")); }
+}
+function playDetached(n){
+  const fakeSub = { id: n.subId || "detached", name: n.subName, cover:"" };
+  const fakeEp = { id: n.epId || "detached", title: n.epTitle, audioUrl: n.audioUrl, cover:"" };
+  playEpisode(fakeSub, fakeEp, n.time, true);
+}
+function updatePlayBtn(){ $("#btnPlay").innerHTML = audio.paused ? I.play : I.pause; }
+audio.addEventListener("loadedmetadata", ()=>{
+  $("#tDur").textContent = fmtTime(audio.duration);
+  if(pendingSeek){ audio.currentTime = pendingSeek; pendingSeek = null; }
+});
+audio.addEventListener("timeupdate", ()=>{
+  if(!seeking) $("#seek").value = audio.duration ? Math.round(audio.currentTime / audio.duration * 1000) : 0;
+  $("#tCur").textContent = fmtTime(audio.currentTime);
+});
+audio.addEventListener("play", ()=>{ updatePlayBtn(); renderSubs(); });
+audio.addEventListener("pause", ()=>{ updatePlayBtn(); renderSubs(); });
+audio.addEventListener("ended", updatePlayBtn);
+audio.addEventListener("error", ()=>{ if(current) toast("音频加载失败，请检查网络"); });
+$("#seek").addEventListener("input", e=>{
+  seeking = true;
+  if(audio.duration) $("#tCur").textContent = fmtTime(e.target.value/1000 * audio.duration);
+});
+$("#seek").addEventListener("change", e=>{
+  if(audio.duration) audio.currentTime = e.target.value/1000 * audio.duration;
+  seeking = false;
+});
+$("#btnPlay").addEventListener("click", ()=>{
+  if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>toast("播放失败")); }
+  else audio.pause();
+});
+$("#btnBack15").innerHTML = I.back + "<span>-15s</span>";
+$("#btnBack30").innerHTML = I.back + "<span>-30s</span>";
+$("#btnFwd15").innerHTML = I.fwd + "<span>+15s</span>";
+$("#btnFwd30").innerHTML = I.fwd + "<span>+30s</span>";
+$("#btnBack15").addEventListener("click", ()=>{ audio.currentTime = Math.max(0, audio.currentTime - 15); });
+$("#btnBack30").addEventListener("click", ()=>{ audio.currentTime = Math.max(0, audio.currentTime - 30); });
+$("#btnFwd15").addEventListener("click", ()=>{ audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + 15); });
+$("#btnFwd30").addEventListener("click", ()=>{ audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + 30); });
+$("#speedBtn").addEventListener("click", ()=>{
+  const cur = parseFloat($("#speedBtn").textContent) || 1;
+  const next = SPEEDS[(SPEEDS.indexOf(cur) + 1) % SPEEDS.length];
+  audio.playbackRate = next;
+  $("#speedBtn").textContent = next + "×";
+});
+$("#dockDl").innerHTML = I.dl;
+$("#dockDl").addEventListener("click", ()=>{ if(current) downloadEpisode(current.sub, current.ep); });
+function setupMediaSession(){
+  if(!("mediaSession" in navigator) || !current) return;
+  try{
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.ep.title,
+      artist: epDisplayName(current.sub, current.ep),
+      album: "播客速记",
+      artwork: (current.ep.cover || current.sub.cover) ? [{ src: current.ep.cover || current.sub.cover, sizes:"512x512" }] : []
+    });
+    navigator.mediaSession.setActionHandler("play", ()=>audio.play());
+    navigator.mediaSession.setActionHandler("pause", ()=>audio.pause());
+    navigator.mediaSession.setActionHandler("seekbackward", d=>{ audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || 15)); });
+    navigator.mediaSession.setActionHandler("seekforward", d=>{ audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + (d.seekOffset || 15)); });
+    navigator.mediaSession.setActionHandler("seekto", d=>{ if(d.seekTime!=null) audio.currentTime = d.seekTime; });
+  }catch(e){ /* 不支持则忽略 */ }
+}
+
+/* ---------- 打点与笔记编辑 ---------- */
+let capturedTime = null;
+let editingNoteId = null;
+$("#capBtn").innerHTML = I.pin + "打点";
+$("#capBtn").addEventListener("click", ()=>{
+  if(!current){ toast("先播放一集播客"); return; }
+  capturedTime = Math.floor(audio.currentTime);
+  $("#capTime").textContent = fmtTime(capturedTime);
+  $("#capHint").textContent = "已冻结时间点，写完点保存";
+  $("#noteText").focus();
+});
+$("#saveNoteBtn").addEventListener("click", ()=>{
+  const text = $("#noteText").value.trim();
+  if(editingNoteId){
+    const n = notes.find(x=>x.id===editingNoteId);
+    if(n){ n.text = text; saveNotes(); }
+    editingNoteId = null;
+    $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
+    toast("笔记已更新");
+  }else{
+    if(!current){ toast("先播放一集播客再记笔记"); return; }
+    if(capturedTime==null){ toast("先点「打点」冻结时间点"); return; }
+    if(!text){ toast("先写一句想法"); $("#noteText").focus(); return; }
+    notes.push({
+      id: uid(), subId: current.sub.id, subName: epDisplayName(current.sub, current.ep),
+      epId: current.ep.id, epTitle: current.ep.title, audioUrl: current.ep.audioUrl,
+      time: capturedTime, text, createdAt: Date.now()
+    });
+    saveNotes();
+    toast("已保存到 " + fmtTime(capturedTime));
+  }
+  capturedTime = null; $("#capTime").textContent = "—";
+  $("#capHint").textContent = "按下打点，冻结当前时间";
+  $("#noteText").value = "";
+  renderNotes(); renderSubs();
+});
+function startEditNote(n){
+  const sub = subs.find(s=>s.id===n.subId);
+  const ep = sub && sub.episodes.find(x=>x.id===n.epId);
+  if(sub && ep && (!current || current.ep.id!==ep.id)) playEpisode(sub, ep, n.time, false);
+  else if(current && current.ep.id===n.epId){ audio.currentTime = n.time; }
+  editingNoteId = n.id;
+  capturedTime = n.time;
+  $("#capTime").textContent = fmtTime(n.time);
+  $("#capHint").textContent = "正在编辑这条笔记";
+  $("#noteText").value = n.text;
+  $("#cancelEditBtn").hidden = false;
+  $("#saveNoteBtn").textContent = "保存修改";
+  $("#composer").classList.add("on");
+  setDockVisible();
+  $("#noteText").focus();
+}
+$("#cancelEditBtn").addEventListener("click", ()=>{
+  editingNoteId = null; capturedTime = null;
+  $("#noteText").value = ""; $("#capTime").textContent = "—";
+  $("#capHint").textContent = "按下打点，冻结当前时间";
+  $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
+});
+/* 语音输入（支持才显示） */
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return;
+  const btn = $("#micBtn");
+  btn.hidden = false; btn.innerHTML = I.mic + "语音输入";
+  let rec = null, listening = false;
+  btn.addEventListener("click", ()=>{
+    if(listening){ try{ rec.stop(); }catch(e){} return; }
+    rec = new SR();
+    rec.lang = "zh-CN"; rec.interimResults = false; rec.continuous = false;
+    rec.onresult = e=>{
+      let s = "";
+      for(const r of e.results) s += r[0].transcript;
+      const ta = $("#noteText");
+      ta.value = (ta.value ? ta.value + (/\n$/.test(ta.value) ? "" : "\n") : "") + s;
+    };
+    rec.onend = ()=>{ listening = false; btn.classList.remove("mic-on"); btn.innerHTML = I.mic + "语音输入"; };
+    rec.onerror = ev=>{ listening = false; btn.classList.remove("mic-on"); btn.innerHTML = I.mic + "语音输入"; if(ev.error!=="aborted") toast("语音输入失败：" + ev.error); };
+    try{ rec.start(); listening = true; btn.classList.add("mic-on"); btn.textContent = "聆听中，点此停止"; }
+    catch(e){ toast("语音输入启动失败"); }
+  });
+})();
+
+/* ---------- 下载 ---------- */
+async function downloadEpisode(sub, ep){
+  const title = epDisplayName(sub, ep) + " - " + ep.title;
+  if(settings.downloadMode==="share"){
+    if(navigator.share){
+      try{ await navigator.share({ title, url: ep.audioUrl }); return; }
+      catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    try{ await navigator.clipboard.writeText(ep.audioUrl); toast("当前浏览器不支持分享，已复制音频链接，可粘贴到 1DM / NDM 下载"); }
+    catch(e){ toast("音频链接：" + ep.audioUrl); }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = ep.audioUrl;
+  a.download = ep.title.replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
+  a.target = "_blank"; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("已开始下载（跨站音频若被浏览器拦截，会改为打开音频页）");
+}
+
+/* ---------- 导出 Markdown ---------- */
+$("#exportMdBtn").addEventListener("click", ()=>{
+  if(!notes.length){ toast("还没有笔记可导出"); return; }
+  const today = new Date();
+  const dateStr = today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0");
+  let md = "---\ntitle: 播客速记 " + dateStr + "\ndate: " + dateStr + "\ntags: [播客, 笔记]\nsource: 播客速记（独立版）\n---\n\n# 播客速记\n\n";
+  const bySub = new Map();
+  notes.forEach(n=>{ if(!bySub.has(n.subName)) bySub.set(n.subName, new Map()); const m = bySub.get(n.subName); if(!m.has(n.epId)) m.set(n.epId, []); m.get(n.epId).push(n); });
+  bySub.forEach((eps, subName)=>{
+    md += "## " + subName + "\n\n";
+    eps.forEach(list=>{
+      const first = list[0];
+      md += "### " + first.epTitle + "\n\n";
+      if(first.audioUrl) md += "音频：" + first.audioUrl + "\n\n";
+      list.slice().sort((a,b)=>a.time-b.time).forEach(n=>{
+        const link = n.audioUrl ? "[" + fmtTime(n.time) + "](" + n.audioUrl + "#t=" + Math.floor(n.time) + ")" : fmtTime(n.time);
+        md += "- " + link + " " + n.text.replace(/\n/g, "\n  ") + "\n";
+      });
+      md += "\n";
+    });
+  });
+  downloadFile("播客速记-" + dateStr + ".md", md, "text/markdown;charset=utf-8");
+  toast("已导出 Markdown");
+});
+
+/* ---------- 视图切换 ---------- */
+function switchView(name){
+  $$(".tab").forEach(t=>t.setAttribute("aria-selected", t.dataset.view===name ? "true" : "false"));
+  $$("section.view").forEach(v=>v.classList.toggle("on", v.id==="view-"+name));
+  if(name==="settings") renderSettingsInfo();
+  window.scrollTo({top:0});
+}
+$$(".tab").forEach(t=>t.addEventListener("click", ()=>switchView(t.dataset.view)));
+$$(".addtab").forEach(t=>t.addEventListener("click", ()=>{
+  $$(".addtab").forEach(x=>x.setAttribute("aria-selected", x===t ? "true" : "false"));
+  $$(".addpane").forEach(p=>p.classList.toggle("on", p.id==="pane-"+t.dataset.addtab));
+}));
+
+/* ---------- 添加订阅：三种方式 ---------- */
+function setAddStatus(msg){ $("#addStatus").textContent = msg || ""; }
+$("#searchBtn").addEventListener("click", doSearch);
+$("#searchInput").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(); });
+async function doSearch(){
+  const kw = $("#searchInput").value.trim();
+  if(!kw){ toast("先输入节目名"); return; }
+  const btn = $("#searchBtn"); btn.disabled = true; btn.textContent = "搜索中…";
+  setAddStatus("正在通过 iTunes 搜索…");
+  try{
+    const url = "https://itunes.apple.com/search?term=" + encodeURIComponent(kw) + "&media=podcast&country=CN&limit=30";
+    const txt = await fetchDirectOrProxy(url, 12000);
+    const j = JSON.parse(txt);
+    const results = (j.results || []).filter(r=>r.feedUrl);
+    if(!results.length){ setAddStatus("没有搜到带订阅源的节目，换个关键词试试。"); $("#searchResults").innerHTML = ""; return; }
+    setAddStatus("找到 " + results.length + " 个节目，点任意一个即可订阅。");
+    $("#searchResults").innerHTML = results.map((r,i) =>
+      '<button class="sres-item" data-i="' + i + '">' + coverImg(r.artworkUrl100 || r.artworkUrl60) +
+      '<span><span class="t">' + esc(r.collectionName || r.trackName || "未命名节目") + '</span><br/>' +
+      '<span class="a">' + esc(r.artistName || "") + '</span></span></button>'
+    ).join("");
+    $$("#searchResults .sres-item").forEach((el, i)=>{
+      el.addEventListener("click", async ()=>{
+        const r = results[i];
+        setAddStatus("正在抓取「" + (r.collectionName || "") + "」的订阅源…");
+        try{
+          const { sub, isNew } = await subscribeByFeedUrl(r.feedUrl, { name: r.collectionName, author: r.artistName, cover: r.artworkUrl600 || r.artworkUrl100 });
+          openSubs.add(sub.id); renderSubs();
+          setAddStatus("");
+          toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 50 集）" : "「" + sub.name + "」已在订阅中，已刷新");
+        }catch(e){ setAddStatus("订阅失败：" + (e.message || e)); }
+      });
+    });
+  }catch(e){
+    setAddStatus("搜索失败：" + (e.message || e) + "（直连与代理均未成功）");
+  } finally { btn.disabled = false; btn.textContent = "搜索"; }
+}
+$("#rssBtn").addEventListener("click", async ()=>{
+  const url = $("#rssInput").value.trim();
+  if(!/^https?:\/\//i.test(url)){ toast("请粘贴以 http 开头的 RSS 地址"); return; }
+  const btn = $("#rssBtn"); btn.disabled = true; btn.textContent = "抓取中…";
+  setAddStatus("正在通过代理链抓取并解析 RSS…");
+  try{
+    const { sub, isNew } = await subscribeByFeedUrl(url, null);
+    openSubs.add(sub.id); renderSubs();
+    $("#rssInput").value = ""; setAddStatus("");
+    toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 50 集）" : "「" + sub.name + "」已在订阅中，已刷新");
+  }catch(e){ setAddStatus("订阅失败：" + (e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = "订阅"; }
+});
+$("#xyzBtn").addEventListener("click", async ()=>{
+  const raw = $("#xyzInput").value.trim();
+  if(!raw){ toast("先粘贴小宇宙单集链接"); return; }
+  const btn = $("#xyzBtn"); btn.disabled = true; btn.textContent = "导入中…";
+  setAddStatus("正在通过代理链打开单集页面…");
+  try{
+    const group = await importXiaoyuzhou(raw);
+    openSubs.add(group.id); renderSubs();
+    $("#xyzInput").value = ""; setAddStatus("");
+  }catch(e){
+    setAddStatus("导入失败：" + (e.message || e));
+    if(String(e.message||"").indexOf("付费/加密")>=0) toast("该单集为付费/加密内容，无法导入");
+  }
+  finally { btn.disabled = false; btn.textContent = "导入"; }
+});
+
+/* ---------- 设置 ---------- */
+function renderSettingsInfo(){
+  $("#workerInput").value = settings.workerTemplate || "";
+  updateProxyUI();
+  const dlB = $("#dlBrowser"), dlS = $("#dlShare");
+  dlB.setAttribute("aria-pressed", settings.downloadMode==="browser" ? "true" : "false");
+  dlS.setAttribute("aria-pressed", settings.downloadMode==="share" ? "true" : "false");
+  let bytes = 0;
+  [LS.subs, LS.notes, LS.settings, LS.proxy].forEach(k=>{ const v = localStorage.getItem(k); if(v) bytes += v.length * 2; });
+  $("#dataSize").textContent = bytes ? (bytes/1024).toFixed(1) + " KB（估算）" : "0 KB";
+  const epCount = subs.reduce((a,s)=>a + s.episodes.length, 0);
+  $("#dataCounts").textContent = subs.length + " 个订阅 · " + epCount + " 集缓存 · " + notes.length + " 条笔记";
+}
+$("#dlBrowser").addEventListener("click", ()=>{ settings.downloadMode = "browser"; saveSettings(); renderSettingsInfo(); toast("下载方式：浏览器直接下载"); });
+$("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：分享到外部下载器（1DM / NDM 等）"); });
+$("#workerSave").addEventListener("click", async ()=>{
+  settings.workerTemplate = $("#workerInput").value.trim();
+  saveSettings();
+  proxyState.chosen = ""; proxyState.probedAt = 0; saveProxy();
+  toast("已保存，正在重新探测代理…");
+  const w = await probeProxies();
+  toast(w ? "代理就绪：" + w.name : "暂无可用代理，抓取时会再自动重试");
+  renderSettingsInfo();
+});
+$("#proxyRetest").addEventListener("click", async ()=>{
+  proxyState.probedAt = 0; saveProxy();
+  toast("正在重新测速…");
+  const w = await probeProxies();
+  toast(w ? "最快代理：" + w.name : "全部代理不可用");
+  renderSettingsInfo();
+});
+$("#backupBtn").addEventListener("click", ()=>{
+  const payload = { app:"podmemo-standalone", version:1, exportedAt:new Date().toISOString(), subs, notes, settings, proxy: proxyState };
+  downloadFile("播客速记备份-" + fmtDate(new Date().toISOString()) + ".json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+  toast("备份已导出");
+});
+$("#restoreBtn").addEventListener("click", ()=>$("#restoreFile").click());
+$("#restoreFile").addEventListener("change", async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    const j = JSON.parse(await f.text());
+    if(!j || !Array.isArray(j.subs) || !Array.isArray(j.notes)) throw new Error("文件格式不对");
+    if(!(await uiConfirm("导入将覆盖当前全部订阅与笔记，继续？"))) return;
+    subs = j.subs; notes = j.notes;
+    settings = Object.assign({ workerTemplate:"", downloadMode:"browser" }, j.settings || {});
+    saveSubs(); saveNotes(); saveSettings();
+    renderSubs(); renderNotes(); renderSettingsInfo();
+    toast("备份已恢复");
+  }catch(err){ toast("导入失败：" + (err.message || err)); }
+  e.target.value = "";
+});
+
+/* ---------- PWA：manifest + service worker ---------- */
+const THEME = "#b34700";
+const manifestObj = {
+  name:"播客速记", short_name:"播客速记", description:"听播客时一键打点记笔记，导出 Markdown 到 Obsidian",
+  start_url:".", scope:".", display:"standalone", orientation:"portrait",
+  background_color:"#faf6f0", theme_color:THEME, lang:"zh-CN",
+  icons:[{ src:"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjYjM0NzAwIi8+CiAgPHJlY3QgeD0iMjE2IiB5PSI4NCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjE5NiIgcng9IjQwIiBmaWxsPSIjZmZmN2VkIi8+CiAgPHBhdGggZD0iTTE0NiAyMzZhMTEwIDExMCAwIDAgMCAyMjAgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmN2VkIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cmVjdCB4PSIyNDEiIHk9IjM0MCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjU4IiByeD0iMTUiIGZpbGw9IiNmZmY3ZWQiLz4KICA8cGF0aCBkPSJNMzE2IDk2bDY0IDI2djExMGwtNjQtMjZ6IiBmaWxsPSIjZmZkOWE4Ii8+CiAgPHJlY3QgeD0iMTc2IiB5PSIzOTgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjYiIHJ4PSIxMyIgZmlsbD0iI2ZmZjdlZCIvPgo8L3N2Zz4K", sizes:"any", type:"image/svg+xml", purpose:"any" }]
+};
+(function installManifest(){
+  try{
+    const blob = new Blob([JSON.stringify(manifestObj)], {type:"application/manifest+json"});
+    const link = document.createElement("link");
+    link.rel = "manifest"; link.href = URL.createObjectURL(blob);
+    document.head.appendChild(link);
+  }catch(e){ /* 忽略 */ }
+})();
+const SW_SOURCE = [
+  "const CACHE = 'podmemo-shell-v1';",
+  "const SHELL = ['./', './index.html', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijk2IiBmaWxsPSIjYjM0NzAwIi8+CiAgPHJlY3QgeD0iMjE2IiB5PSI4NCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjE5NiIgcng9IjQwIiBmaWxsPSIjZmZmN2VkIi8+CiAgPHBhdGggZD0iTTE0NiAyMzZhMTEwIDExMCAwIDAgMCAyMjAgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmN2VkIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cmVjdCB4PSIyNDEiIHk9IjM0MCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjU4IiByeD0iMTUiIGZpbGw9IiNmZmY3ZWQiLz4KICA8cGF0aCBkPSJNMzE2IDk2bDY0IDI2djExMGwtNjQtMjZ6IiBmaWxsPSIjZmZkOWE4Ii8+CiAgPHJlY3QgeD0iMTc2IiB5PSIzOTgiIHdpZHRoPSIxNjAiIGhlaWdodD0iMjYiIHJ4PSIxMyIgZmlsbD0iI2ZmZjdlZCIvPgo8L3N2Zz4K', './manifest.webmanifest'];",
+  "self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });",
+  "self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });",
+  "self.addEventListener('fetch', e => {",
+  "  const url = new URL(e.request.url);",
+  "  const scopeOrigin = new URL(self.registration.scope).origin;",
+  "  const isMedia = e.request.destination === 'audio' || /\\.(mp3|m4a|aac|ogg|wav)$/i.test(url.pathname);",
+  "  if (e.request.method !== 'GET' || isMedia) return; // 音频与接口：网络优先，不进缓存",
+  "  if (url.origin === scopeOrigin) {",
+  "    e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request).then(r => { const cp = r.clone(); caches.open(CACHE).then(c => c.put(e.request, cp)); return r; }).catch(() => caches.match('./index.html'))));",
+  "  } else {",
+  "    e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); // 跨域 API/代理：网络优先，失败回退缓存",
+  "  }",
+  "});"
+].join("\n");
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{ /* 同目录无 sw.js 时静默跳过，可在设置里下载 */ });
+  });
+}
+$("#dlManifestBtn").addEventListener("click", ()=>downloadFile("manifest.webmanifest", JSON.stringify(manifestObj, null, 2), "application/manifest+json"));
+$("#dlSwBtn").addEventListener("click", ()=>downloadFile("sw.js", SW_SOURCE, "text/javascript;charset=utf-8"));
+
+/* ---------- 键盘适配：VisualViewport 抬升底部坞，聚焦滚动 ---------- */
+if(window.visualViewport){
+  const vv = window.visualViewport;
+  const onVV = ()=>{
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty("--kb", kb + "px");
+  };
+  vv.addEventListener("resize", onVV);
+  vv.addEventListener("scroll", onVV);
+}
+document.addEventListener("focusin", e=>{
+  const el = e.target;
+  if(el && (el.tagName==="TEXTAREA" || el.tagName==="INPUT")){
+    setTimeout(()=>{ try{ el.scrollIntoView({block:"center", behavior:"smooth"}); }catch(err){} }, 250);
+  }
+});
+new ResizeObserver(()=>{ if(current) setDockVisible(); }).observe($("#dock"));
+
+/* ---------- 启动 ---------- */
+(async function init(){
+  renderSubs(); renderNotes();
+  $("#workerInput").value = settings.workerTemplate || "";
+  await loadSameOrigin();
+  renderSubs();
+  updateProxyUI();
+  probeProxies(); // 并行测速选最快代理，结果写入 localStorage
+})();
+</script>
+</body>
+</html>
