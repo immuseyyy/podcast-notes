@@ -348,9 +348,20 @@
       <p class="hint">点单集或播放器上的下载按钮时如何处理音频。</p>
       <div class="seg" role="group" aria-label="下载方式">
         <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
-        <button id="dlShare" aria-pressed="false">复制链接到 1DM</button>
+        <button id="dlShare" aria-pressed="false">发送到外部下载器</button>
       </div>
-      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；1DM 模式把链接直接发送给 1DM+（需安装 1DM+；未安装则只复制链接）。</p>
+      <div class="row" id="downloaderRow" style="margin-top:10px">
+        <select class="txt" id="downloaderSel" aria-label="外部下载器">
+          <option value="idm.internet.download.manager">1DM（免费版）</option>
+          <option value="idm.internet.download.manager.plus">1DM+（付费版）</option>
+          <option value="com.dv.adm">ADM</option>
+          <option value="custom">自定义包名…</option>
+        </select>
+      </div>
+      <div class="row" id="downloaderCustomRow" style="margin-top:8px;display:none">
+        <input class="txt" id="downloaderCustom" placeholder="输入下载器的包名，如 idm.internet.download.manager" autocomplete="off" />
+      </div>
+      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；外部下载器模式把链接直接发送给所选 App（必须和手机里装的是同一款，否则会跳到 Play Store）。链接同时会复制到剪贴板，可手动粘贴兜底。</p>
     </div>
 
     <div class="card">
@@ -557,7 +568,7 @@ function lsSet(key, val){
 }
 let subs = lsGet(LS.subs, []);            // [{id,name,author,cover,feedUrl,group,episodes:[{id,title,pubDate,duration,audioUrl,cover}],updatedAt}]
 let notes = lsGet(LS.notes, []);          // [{id,subId,subName,epId,epTitle,audioUrl,time,text,createdAt}]
-let settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"" }, lsGet(LS.settings, {}));
+let settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"", downloader:"idm.internet.download.manager", downloaderCustom:"" }, lsGet(LS.settings, {}));
 let proxyState = Object.assign({ chosen:"", probedAt:0 }, lsGet(LS.proxy, {}));
 const saveSubs = ()=>lsSet(LS.subs, subs);
 const saveNotes = ()=>lsSet(LS.notes, notes);
@@ -1392,13 +1403,27 @@ $("#cancelEditBtn").addEventListener("click", ()=>{
 })();
 
 /* ---------- 下载 ---------- */
-function sendTo1DM(url){
-  // 完整 intent：把 ACTION_SEND 定向投递给 1DM（等价于 X 浏览器"调用外部下载器"），跳过系统分享面板
+function downloaderPkg(){
+  if(settings.downloader === "custom" && settings.downloaderCustom) return settings.downloaderCustom.trim();
+  return settings.downloader || "idm.internet.download.manager";
+}
+function downloaderName(){
+  const p = downloaderPkg();
+  if(p === "idm.internet.download.manager.plus") return "1DM+";
+  if(p === "idm.internet.download.manager") return "1DM";
+  if(p === "com.dv.adm") return "ADM";
+  return "下载器";
+}
+function sendToDownloader(url){
+  // 完整 intent：把 ACTION_SEND 定向投递给用户选定的下载器（等价于 X 浏览器"调用外部下载器"），跳过系统分享面板
   // 注意：intent 参数里不能出现原始分号，encodeURIComponent 不编码分号，需手动处理
+  const pkg = downloaderPkg();
   const data = encodeURIComponent(url).replace(/;/g, "%3B");
+  const fallback = encodeURIComponent("https://play.google.com/store/apps/details?id=" + pkg).replace(/;/g, "%3B");
   window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain" +
-    ";package=idm.internet.download.manager.plus" +
-    ";S.android.intent.extra.TEXT=" + data + ";end";
+    ";package=" + pkg +
+    ";S.android.intent.extra.TEXT=" + data +
+    ";S.browser_fallback_url=" + fallback + ";end";
 }
 async function currentProxy(){
   // 返回当前可用代理（必要时先探测），没有则返回 null
@@ -1413,10 +1438,10 @@ async function currentProxy(){
 async function downloadEpisode(sub, ep){
   const fname = (ep.title || "episode").replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
   if(settings.downloadMode==="share"){
-    // 1DM 模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底
-    sendTo1DM(ep.audioUrl);
+    // 外部下载器模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底
+    sendToDownloader(ep.audioUrl);
     try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
-    toast("已发送到 1DM（若未安装 1DM+，链接已复制，可手动粘贴到下载器）");
+    toast("已发送到" + downloaderName() + "（若未安装对应 App，链接已复制，可手动粘贴到下载器）");
     return;
   }
   // 浏览器直接下载：经代理取 blob 后真下载（带文件名）；失败回退到新标签页打开
@@ -1554,6 +1579,13 @@ function renderSettingsInfo(){
   const dlB = $("#dlBrowser"), dlS = $("#dlShare");
   dlB.setAttribute("aria-pressed", settings.downloadMode==="browser" ? "true" : "false");
   dlS.setAttribute("aria-pressed", settings.downloadMode==="share" ? "true" : "false");
+  const showDl = settings.downloadMode === "share";
+  $("#downloaderRow").style.display = showDl ? "" : "none";
+  const pkg = settings.downloader || "idm.internet.download.manager";
+  const preset = ["idm.internet.download.manager","idm.internet.download.manager.plus","com.dv.adm"].includes(pkg) ? pkg : "custom";
+  $("#downloaderSel").value = preset;
+  $("#downloaderCustom").value = settings.downloaderCustom || "";
+  $("#downloaderCustomRow").style.display = (showDl && preset === "custom") ? "" : "none";
   const ck = $("#capKeep"), cp = $("#capPauseBtn");
   ck.setAttribute("aria-pressed", !settings.capPause ? "true" : "false");
   cp.setAttribute("aria-pressed", settings.capPause ? "true" : "false");
@@ -1568,7 +1600,9 @@ function renderSettingsInfo(){
   $("#dataCounts").textContent = subs.length + " 个订阅 · " + epCount + " 集缓存 · " + notes.length + " 条笔记 · " + playHist.length + " 条历史 · " + favs.length + " 个收藏";
 }
 $("#dlBrowser").addEventListener("click", ()=>{ settings.downloadMode = "browser"; saveSettings(); renderSettingsInfo(); toast("下载方式：浏览器直接下载"); });
-$("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：复制链接到 1DM"); });
+$("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：外部下载器（" + downloaderName() + "）"); });
+$("#downloaderSel").addEventListener("change", e=>{ settings.downloader = e.target.value; saveSettings(); renderSettingsInfo(); toast("外部下载器：" + downloaderName()); });
+$("#downloaderCustom").addEventListener("change", e=>{ settings.downloaderCustom = e.target.value.trim(); saveSettings(); renderSettingsInfo(); });
 $("#capKeep").addEventListener("click", ()=>{ settings.capPause = false; saveSettings(); renderSettingsInfo(); toast("打点时不暂停播放"); });
 $("#capPauseBtn").addEventListener("click", ()=>{ settings.capPause = true; saveSettings(); renderSettingsInfo(); toast("打点时暂停播放"); });
 $("#workerSave").addEventListener("click", async ()=>{
@@ -1602,7 +1636,7 @@ $("#restoreFile").addEventListener("change", async e=>{
     subs = j.subs; notes = j.notes;
     playHist = Array.isArray(j.history) ? j.history : [];
     favs = Array.isArray(j.favs) ? j.favs : [];
-    settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"" }, j.settings || {});
+    settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"", downloader:"idm.internet.download.manager", downloaderCustom:"" }, j.settings || {});
     saveSubs(); saveNotes(); saveHist(); saveFavs(); saveSettings();
     renderSubs(); renderNotes(); renderHistory(); renderFavs(); renderSettingsInfo();
     toast("备份已恢复");
