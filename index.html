@@ -124,6 +124,12 @@
   .cover.sm{ width:40px; height:40px; border-radius:7px; }
   .sres-item .t{ font-weight:650; font-size:15px; line-height:1.35; }
   .sres-item .a{ color:var(--ink2); font-size:13px; }
+  .morebtn{
+    display:block; width:100%; padding:11px; margin:4px 0 8px;
+    background:var(--surface2); border-radius:10px; color:var(--accent);
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .morebtn:active{ transform:scale(.98); }
 
   /* ---------- 订阅与单集 ---------- */
   .sub{ background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-bottom:14px; overflow:hidden; }
@@ -290,7 +296,7 @@
           <input class="txt" id="rssInput" type="url" enterkeyhint="go" placeholder="粘贴 RSS 地址，如 https://…" autocomplete="off" />
           <button class="btn" id="rssBtn">订阅</button>
         </div>
-        <p class="hint">通过代理链抓取并解析，每个订阅保留最近 50 集。</p>
+        <p class="hint">通过代理链抓取并解析，每个订阅保留最近 300 集。</p>
       </div>
 
       <div class="addpane" id="pane-xyz">
@@ -637,7 +643,9 @@ let playHist = lsGet(LS.history, []);   // 播放历史
 let favs = lsGet(LS.favs, []);          // 收藏单集
 const saveHist = ()=>lsSet(LS.history, playHist);
 const saveFavs = ()=>lsSet(LS.favs, favs);
-const MAX_EPS = 50;
+const MAX_EPS = 300;   // 单订阅最多保留集数（约 150KB，localStorage 无压力）
+const PAGE_SIZE = 50;   // 列表每页显示集数
+const shownEps = new Map(); // subId -> 已展开显示的集数（仅会话内，不持久化）
 
 /* ---------- 代理链 ---------- */
 const BUILTIN_PROXIES = [
@@ -930,7 +938,8 @@ function renderSubs(){
   }
   box.innerHTML = subs.map(sub=>{
     const isXyz = sub.group===XYZ_GROUP;
-    const epsHtml = sub.episodes.map(ep=>{
+    const shown = shownEps.get(sub.id) || PAGE_SIZE;
+    const epsHtml = sub.episodes.slice(0, shown).map(ep=>{
       const playing = nowPlaying && nowPlaying.subId===sub.id && nowPlaying.epId===ep.id;
       return '<div class="ep' + (playing?" playing":"") + '" data-ep="' + esc(ep.id) + '">' +
         '<button class="playbtn" data-act="play" aria-label="播放">' + (playing && !audio.paused ? I.pause : I.play) + '</button>' +
@@ -948,7 +957,7 @@ function renderSubs(){
       '<div class="sub-head">' + coverImg(sub.cover || (sub.episodes[0] && sub.episodes[0].cover)) +
         '<div class="meta"><div class="name">' + esc(sub.name) + '</div>' +
         '<div class="sub2">' + esc(sub.author || "") + (sub.author ? " · " : "") + sub.episodes.length + ' 集' +
-          (isXyz ? "" : "（保留最近 50 集）") +
+          (isXyz ? "" : "（保留最近 300 集）") +
           (sub.updatedAt ? " · 更新于 " + esc(fmtDate(sub.updatedAt)) : "") + '</div></div>' +
         (!isXyz ? '<button class="iconbtn" data-act="refresh" aria-label="刷新" title="刷新">' + I.refresh + '</button>' : '') +
         '<button class="iconbtn" data-act="toggle" aria-label="展开或收起单集">' + (openSubs.has(sub.id) ? I.chevU : I.chevD) + '</button>' +
@@ -956,6 +965,9 @@ function renderSubs(){
       '</div>' +
       '<div class="eps' + (openSubs.has(sub.id) ? " on" : "") + '">' +
         (sub.episodes.length ? epsHtml : '<div class="ep"><div class="emain hint">暂无单集</div></div>') +
+        (sub.episodes.length > shown
+          ? '<button class="morebtn" data-act="more" data-sub="' + esc(sub.id) + '">加载更多（剩余 ' + (sub.episodes.length - shown) + ' 集）</button>'
+          : "") +
       '</div></div>';
   }).join("");
 }
@@ -978,6 +990,11 @@ $("#subList").addEventListener("click", e=>{
     return;
   }
   if(act==="refresh"){ btn.innerHTML = '<span class="spin"></span>'; refreshSub(sub); return; }
+  if(act==="more"){
+    shownEps.set(sub.id, (shownEps.get(sub.id) || PAGE_SIZE) + PAGE_SIZE);
+    renderSubs();
+    return;
+  }
   const epEl = e.target.closest("[data-ep]");
   const ep = sub.episodes.find(x=>x.id===epEl.dataset.ep);
   if(!ep) return;
@@ -1647,7 +1664,7 @@ async function doSearch(){
           const { sub, isNew } = await subscribeByFeedUrl(r.feedUrl, { name: r.collectionName, author: r.artistName, cover: r.artworkUrl600 || r.artworkUrl100 });
           openSubs.add(sub.id); renderSubs();
           setAddStatus("");
-          toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 50 集）" : "「" + sub.name + "」已在订阅中，已刷新");
+          toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 300 集）" : "「" + sub.name + "」已在订阅中，已刷新");
         }catch(e){ setAddStatus("订阅失败：" + (e.message || e)); }
       });
     });
@@ -1664,7 +1681,7 @@ $("#rssBtn").addEventListener("click", async ()=>{
     const { sub, isNew } = await subscribeByFeedUrl(url, null);
     openSubs.add(sub.id); renderSubs();
     $("#rssInput").value = ""; setAddStatus("");
-    toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 50 集）" : "「" + sub.name + "」已在订阅中，已刷新");
+    toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 300 集）" : "「" + sub.name + "」已在订阅中，已刷新");
   }catch(e){ setAddStatus("订阅失败：" + (e.message || e)); }
   finally { btn.disabled = false; btn.textContent = "订阅"; }
 });
