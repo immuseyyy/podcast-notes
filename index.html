@@ -1490,16 +1490,15 @@ async function downloadEpisode(sub, ep){
     toast("已发送到" + downloaderName() + "（若未安装对应 App，链接已复制，可手动粘贴到下载器）");
     return;
   }
-  // 浏览器直接下载：优先直链（CDN 给 CORS 头时最快、不耗代理流量），失败回退代理；再失败则新标签页打开
+  // 浏览器直接下载：优先直链（CDN 给 CORS 头时最快、不耗代理流量），失败静默回退代理；再失败则新标签页打开
+  toast("正在下载…");
   try{
     let blob = null;
     try{
-      toast("正在直连下载…");
       blob = await fetchBlobDirect(ep.audioUrl, 12000);
     }catch(de){
       const p = await currentProxy().catch(()=>null);
       if(!p) throw de;
-      toast("直连失败，经代理下载…");
       const r = await fetch(viaProxy(p, ep.audioUrl));
       if(!r.ok) throw new Error("HTTP " + r.status);
       blob = await r.blob();
