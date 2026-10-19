@@ -309,7 +309,7 @@
         <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
         <button id="dlShare" aria-pressed="false">复制链接到 1DM</button>
       </div>
-      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；1DM 模式复制音频链接并尝试打开 1DM（需在 1DM 里开启「智能下载」自动接管剪贴板链接）。</p>
+      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；1DM 模式把链接直接发送给 1DM+（需安装 1DM+；未安装则只复制链接）。</p>
     </div>
 
     <div class="card">
@@ -1054,15 +1054,13 @@ $("#cancelEditBtn").addEventListener("click", ()=>{
 })();
 
 /* ---------- 下载 ---------- */
-function openDownloaderApp(){
-  // best-effort：尝试直接拉起 1DM+ / 1DM；未安装则静默无事（链接已在剪贴板）
-  try{
-    const ifr = document.createElement("iframe");
-    ifr.style.display = "none";
-    ifr.src = "intent:#Intent;package=idm.internet.download.manager.plus;end";
-    document.body.appendChild(ifr);
-    setTimeout(()=>ifr.remove(), 2500);
-  }catch(e){}
+function sendTo1DM(url){
+  // 完整 intent：把 ACTION_SEND 定向投递给 1DM（等价于 X 浏览器"调用外部下载器"），跳过系统分享面板
+  // 注意：intent 参数里不能出现原始分号，encodeURIComponent 不编码分号，需手动处理
+  const data = encodeURIComponent(url).replace(/;/g, "%3B");
+  window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain" +
+    ";package=idm.internet.download.manager.plus" +
+    ";S.android.intent.extra.TEXT=" + data + ";end";
 }
 async function currentProxy(){
   // 返回当前可用代理（必要时先探测），没有则返回 null
@@ -1077,10 +1075,10 @@ async function currentProxy(){
 async function downloadEpisode(sub, ep){
   const fname = (ep.title || "episode").replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
   if(settings.downloadMode==="share"){
-    // 1DM 模式：复制链接（1DM 开「智能下载」会自动接管剪贴板链接）+ 尝试直接拉起 1DM
+    // 1DM 模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底
+    sendTo1DM(ep.audioUrl);
     try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
-    openDownloaderApp();
-    toast("音频链接已复制，1DM（已开智能下载）会自动接管；否则在 1DM 里粘贴链接下载");
+    toast("已发送到 1DM（若未安装 1DM+，链接已复制，可手动粘贴到下载器）");
     return;
   }
   // 浏览器直接下载：经代理取 blob 后真下载（带文件名）；失败回退到新标签页打开
