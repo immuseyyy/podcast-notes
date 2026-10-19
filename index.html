@@ -533,7 +533,7 @@ function proxyCandidates(){
   return list;
 }
 function viaProxy(p, target){ return p.template.replace("{url}", encodeURIComponent(target)); }
-const PROBE_TARGET = "https://itunes.apple.com/search?term=a&media=podcast&limit=1&country=CN";
+const PROBE_TARGET = "https://example.com/";
 
 let proxyProbing = null;
 function probeProxies(){
