@@ -555,8 +555,36 @@ async function fetchText(url, ms){
     return await r.text();
   } finally { clearTimeout(to); }
 }
-/* 直链取音频 blob（需 CDN 给 CORS 头；不支持则抛错由调用方回退代理）；带进度回调。
-   超时指"无数据"超时，收到数据即重置——大文件慢速下载不会被误杀。 */
+/* 流式读 Response 为 blob。onProgress(txt): 有长度报"47%"，无长度报"12.3MB"。
+   onChunk(): 每收到一个数据块调一次（用于重置无数据超时）。 */
+async function readBlobStream(r, onProgress, onChunk){
+  const total = +(r.headers.get("content-length") || 0);
+  if(r.body && r.body.getReader){
+    const reader = r.body.getReader();
+    const chunks = [];
+    let received = 0, lastTxt = "";
+    for(;;){
+      const {done, value} = await reader.read();
+      if(done) break;
+      if(onChunk) onChunk();
+      chunks.push(value);
+      received += value.length;
+      if(onProgress){
+        const txt = total ? Math.floor(received / total * 100) + "%"
+                          : (received / 1048576).toFixed(1) + "MB";
+        if(txt !== lastTxt){ lastTxt = txt; onProgress(txt); }
+      }
+    }
+    const b = new Blob(chunks);
+    if(!b.size) throw new Error("empty");
+    return b;
+  }
+  const b = await r.blob();
+  if(!b.size) throw new Error("empty");
+  return b;
+}
+/* 直链取音频 blob（需 CDN 给 CORS 头；不支持则抛错由调用方回退代理）。
+   超时指"无数据"超时（默认30s），收到数据即重置——大文件慢速下载不会被误杀。 */
 async function fetchBlobDirect(url, ms, onProgress){
   const ctl = new AbortController();
   let to = null;
@@ -565,30 +593,7 @@ async function fetchBlobDirect(url, ms, onProgress){
   try{
     const r = await fetch(url, {signal: ctl.signal});
     if(!r.ok) throw new Error("HTTP " + r.status);
-    const total = +(r.headers.get("content-length") || 0);
-    // 有 body 流则分段读以便报进度，否则整包读
-    if(r.body && r.body.getReader && onProgress){
-      const reader = r.body.getReader();
-      const chunks = [];
-      let received = 0, lastPct = -1;
-      for(;;){
-        const {done, value} = await reader.read();
-        if(done) break;
-        arm(); // 收到数据，重置无数据超时
-        chunks.push(value);
-        received += value.length;
-        if(total){
-          const pct = Math.floor(received / total * 100);
-          if(pct !== lastPct){ lastPct = pct; onProgress(pct); }
-        }
-      }
-      const b = new Blob(chunks);
-      if(!b.size) throw new Error("empty");
-      return b;
-    }
-    const b = await r.blob();
-    if(!b.size) throw new Error("empty");
-    return b;
+    return await readBlobStream(r, onProgress, arm);
   } finally { clearTimeout(to); }
 }
 
@@ -1517,17 +1522,17 @@ async function downloadEpisode(sub, ep){
   // 浏览器直接下载：优先直链（CDN 给 CORS 头时最快、不耗代理流量），失败静默回退代理；再失败则新标签页打开
   // 进度 toast 常驻（120s，进度更新会续期），下载完成/失败时被下一条 toast 顶掉
   toast("正在下载…", 120000);
+  const prog = txt=>toast("正在下载… " + txt, 120000);
   try{
     let blob = null;
     try{
-      blob = await fetchBlobDirect(ep.audioUrl, 30000, pct=>toast("正在下载… " + pct + "%", 120000));
+      blob = await fetchBlobDirect(ep.audioUrl, 30000, prog);
     }catch(de){
       const p = await currentProxy().catch(()=>null);
       if(!p) throw de;
       const r = await fetch(viaProxy(p, ep.audioUrl));
       if(!r.ok) throw new Error("HTTP " + r.status);
-      blob = await r.blob();
-      if(!blob.size) throw new Error("empty");
+      blob = await readBlobStream(r, prog, null);
     }
     const obj = URL.createObjectURL(blob);
     const a = document.createElement("a");
