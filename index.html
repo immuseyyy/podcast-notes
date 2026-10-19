@@ -203,6 +203,7 @@
   #capBtn{
     background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:16.5px;
     border-radius:12px; padding:13px 20px; display:inline-flex; align-items:center; gap:8px;
+    white-space:nowrap;
   }
   #capBtn svg{ width:20px; height:20px; }
   #capTime{ font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--accent); }
@@ -214,6 +215,13 @@
   #composer .saverow{ display:flex; gap:8px; margin-top:9px; align-items:center; }
   #composer .saverow .sp{ flex:1; }
   .mic-on{ background:var(--danger) !important; color:#fff !important; }
+  /* 播放器坞折叠为迷你条：只保留封面 + 标题 + 播放按钮 */
+  #miniPlay{ display:none; }
+  #dockFold{ flex:none; }
+  #dock.mini #seek, #dock.mini .timerow, #dock.mini .ctlrow, #dock.mini #composer{ display:none !important; }
+  #dock.mini #miniPlay{ display:inline-flex; }
+  #dock.mini #dockDl{ display:none; }
+  #dock.mini .inner{ padding:7px 14px; }
 
   #toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dockh,90px) + var(--kb) + 14px);
@@ -313,6 +321,15 @@
     </div>
 
     <div class="card">
+      <h3>打点行为</h3>
+      <p class="hint">点「打点」按钮时是否暂停播放。</p>
+      <div class="seg" role="group" aria-label="打点是否暂停播放">
+        <button id="capKeep" aria-pressed="true">打点不暂停</button>
+        <button id="capPauseBtn" aria-pressed="false">打点暂停播放</button>
+      </div>
+    </div>
+
+    <div class="card">
       <h3>备份 / 恢复</h3>
       <p class="hint">全部数据（订阅、单集缓存、笔记、设置）只存在这台设备的浏览器里。清浏览器数据会丢失，请定期导出备份。</p>
       <div class="row" style="margin-top:10px; flex-wrap:wrap">
@@ -341,7 +358,9 @@
     <div class="nowrow">
       <img class="cover sm" id="dockCover" alt="" loading="lazy" decoding="async" fetchpriority="low" />
       <div class="ntitle"><span id="dockTitle">未在播放</span><div class="nsub" id="dockSub"></div></div>
+      <button class="iconbtn" id="miniPlay" aria-label="播放或暂停" title="播放或暂停"></button>
       <button class="iconbtn" id="dockDl" aria-label="下载本集" title="下载本集"></button>
+      <button class="iconbtn" id="dockFold" aria-label="收起或展开播放器" title="收起或展开"></button>
     </div>
     <input type="range" id="seek" min="0" max="1000" value="0" aria-label="播放进度" />
     <div class="timerow"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
@@ -492,7 +511,7 @@ function lsSet(key, val){
 }
 let subs = lsGet(LS.subs, []);            // [{id,name,author,cover,feedUrl,group,episodes:[{id,title,pubDate,duration,audioUrl,cover}],updatedAt}]
 let notes = lsGet(LS.notes, []);          // [{id,subId,subName,epId,epTitle,audioUrl,time,text,createdAt}]
-let settings = Object.assign({ workerTemplate:"", downloadMode:"browser" }, lsGet(LS.settings, {}));
+let settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false }, lsGet(LS.settings, {}));
 let proxyState = Object.assign({ chosen:"", probedAt:0 }, lsGet(LS.proxy, {}));
 const saveSubs = ()=>lsSet(LS.subs, subs);
 const saveNotes = ()=>lsSet(LS.notes, notes);
@@ -912,7 +931,10 @@ function playDetached(n){
   const fakeEp = { id: n.epId || "detached", title: n.epTitle, audioUrl: n.audioUrl, cover:"" };
   playEpisode(fakeSub, fakeEp, n.time, true);
 }
-function updatePlayBtn(){ $("#btnPlay").innerHTML = audio.paused ? I.play : I.pause; }
+function updatePlayBtn(){
+  const h = audio.paused ? I.play : I.pause;
+  $("#btnPlay").innerHTML = h; $("#miniPlay").innerHTML = h;
+}
 audio.addEventListener("loadedmetadata", ()=>{
   $("#tDur").textContent = fmtTime(audio.duration);
   if(pendingSeek){ audio.currentTime = pendingSeek; pendingSeek = null; }
@@ -933,10 +955,21 @@ $("#seek").addEventListener("change", e=>{
   if(audio.duration) audio.currentTime = e.target.value/1000 * audio.duration;
   seeking = false;
 });
-$("#btnPlay").addEventListener("click", ()=>{
+function togglePlay(){
   if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>toast("播放失败")); }
   else audio.pause();
-});
+}
+$("#btnPlay").addEventListener("click", togglePlay);
+$("#miniPlay").addEventListener("click", togglePlay);
+/* 播放器坞折叠：迷你条只保留封面 + 标题 + 播放按钮 */
+let dockMini = false;
+function setDockMini(m){
+  dockMini = m;
+  $("#dock").classList.toggle("mini", m);
+  $("#dockFold").innerHTML = m ? I.chevU : I.chevD;
+  setDockVisible(); // 高度变了，重新计算 --dockh
+}
+$("#dockFold").addEventListener("click", ()=>setDockMini(!dockMini));
 $("#btnBack15").innerHTML = I.back + "<span>-15s</span>";
 $("#btnBack30").innerHTML = I.back + "<span>-30s</span>";
 $("#btnFwd15").innerHTML = I.fwd + "<span>+15s</span>";
@@ -952,6 +985,8 @@ $("#speedBtn").addEventListener("click", ()=>{
   $("#speedBtn").textContent = next + "×";
 });
 $("#dockDl").innerHTML = I.dl;
+$("#dockFold").innerHTML = I.chevD;
+$("#miniPlay").innerHTML = I.play;
 $("#dockDl").addEventListener("click", ()=>{ if(current) downloadEpisode(current.sub, current.ep); });
 function setupMediaSession(){
   if(!("mediaSession" in navigator) || !current) return;
@@ -979,6 +1014,7 @@ $("#capBtn").addEventListener("click", ()=>{
   capturedTime = Math.floor(audio.currentTime);
   $("#capTime").textContent = fmtTime(capturedTime);
   $("#capHint").textContent = "已冻结时间点，写完点保存";
+  if(settings.capPause && !audio.paused) audio.pause();
   $("#noteText").focus();
 });
 $("#saveNoteBtn").addEventListener("click", ()=>{
@@ -1214,6 +1250,9 @@ function renderSettingsInfo(){
   const dlB = $("#dlBrowser"), dlS = $("#dlShare");
   dlB.setAttribute("aria-pressed", settings.downloadMode==="browser" ? "true" : "false");
   dlS.setAttribute("aria-pressed", settings.downloadMode==="share" ? "true" : "false");
+  const ck = $("#capKeep"), cp = $("#capPauseBtn");
+  ck.setAttribute("aria-pressed", !settings.capPause ? "true" : "false");
+  cp.setAttribute("aria-pressed", settings.capPause ? "true" : "false");
   let bytes = 0;
   [LS.subs, LS.notes, LS.settings, LS.proxy].forEach(k=>{ const v = localStorage.getItem(k); if(v) bytes += v.length * 2; });
   $("#dataSize").textContent = bytes ? (bytes/1024).toFixed(1) + " KB（估算）" : "0 KB";
@@ -1222,6 +1261,8 @@ function renderSettingsInfo(){
 }
 $("#dlBrowser").addEventListener("click", ()=>{ settings.downloadMode = "browser"; saveSettings(); renderSettingsInfo(); toast("下载方式：浏览器直接下载"); });
 $("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：复制链接到 1DM"); });
+$("#capKeep").addEventListener("click", ()=>{ settings.capPause = false; saveSettings(); renderSettingsInfo(); toast("打点时不暂停播放"); });
+$("#capPauseBtn").addEventListener("click", ()=>{ settings.capPause = true; saveSettings(); renderSettingsInfo(); toast("打点时暂停播放"); });
 $("#workerSave").addEventListener("click", async ()=>{
   settings.workerTemplate = $("#workerInput").value.trim();
   saveSettings();
@@ -1251,7 +1292,7 @@ $("#restoreFile").addEventListener("change", async e=>{
     if(!j || !Array.isArray(j.subs) || !Array.isArray(j.notes)) throw new Error("文件格式不对");
     if(!(await uiConfirm("导入将覆盖当前全部订阅与笔记，继续？"))) return;
     subs = j.subs; notes = j.notes;
-    settings = Object.assign({ workerTemplate:"", downloadMode:"browser" }, j.settings || {});
+    settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false }, j.settings || {});
     saveSubs(); saveNotes(); saveSettings();
     renderSubs(); renderNotes(); renderSettingsInfo();
     toast("备份已恢复");
