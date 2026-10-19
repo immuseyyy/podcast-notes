@@ -1529,6 +1529,11 @@ async function downloadEpisode(sub, ep){
     try{
       blob = await fetchBlobDirect(ep.audioUrl, 30000, progD);
     }catch(de){
+      // 诊断：直连失败时显示错误类型（调试用）
+      const errName = (de && de.name) || "unknown";
+      const errMsg = (de && de.message) || "";
+      progP("直连失败[" + errName + ":" + errMsg.slice(0,40) + "]，转代理…");
+      await new Promise(r=>setTimeout(r, 1500));
       const p = await currentProxy().catch(()=>null);
       if(!p) throw de;
       const r = await fetch(viaProxy(p, ep.audioUrl));
