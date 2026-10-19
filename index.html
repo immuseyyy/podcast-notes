@@ -998,7 +998,7 @@ $("#dockDl").innerHTML = I.dl;
 $("#dockFold").innerHTML = I.chevD;
 $("#miniPlay").innerHTML = I.play;
 $("#miniCap").innerHTML = I.pin + "打点";
-$("#miniCap").addEventListener("click", ()=>{ setDockMini(false); $("#capBtn").click(); });
+$("#miniCap").addEventListener("click", ()=>{ miniBeforeCap = true; setDockMini(false); $("#capBtn").click(); });
 $("#dockDl").addEventListener("click", ()=>{ if(current) downloadEpisode(current.sub, current.ep); });
 function setupMediaSession(){
   if(!("mediaSession" in navigator) || !current) return;
@@ -1021,6 +1021,7 @@ function setupMediaSession(){
 let capturedTime = null;
 let editingNoteId = null;
 let capPausedByApp = false; // 打点时是否由 App 自动暂停了播放（保存/取消后要恢复）
+let miniBeforeCap = false; // 是否从迷你条点的打点（是则保存/取消后恢复迷你态）
 $("#capBtn").innerHTML = I.pin + "打点";
 $("#capBtn").addEventListener("click", ()=>{
   if(!current){ toast("先播放一集播客"); return; }
@@ -1051,8 +1052,9 @@ $("#saveNoteBtn").addEventListener("click", ()=>{
     });
     saveNotes();
     toast("已保存到 " + fmtTime(noteTime));
-    // 打点时自动暂停的，保存后恢复播放
+    // 打点时自动暂停的，保存后恢复播放；从迷你条进来的，恢复迷你态
     if(capPausedByApp){ capPausedByApp = false; if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>{}); } }
+    if(miniBeforeCap){ miniBeforeCap = false; setDockMini(true); }
   }
   capturedTime = null; $("#capTime").textContent = "—";
   $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
@@ -1078,6 +1080,7 @@ function startEditNote(n){
 $("#cancelEditBtn").addEventListener("click", ()=>{
   editingNoteId = null; capturedTime = null;
   if(capPausedByApp){ capPausedByApp = false; if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>{}); } }
+  if(miniBeforeCap){ miniBeforeCap = false; setDockMini(true); }
   $("#noteText").value = ""; $("#capTime").textContent = "—";
   $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
   $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
