@@ -839,7 +839,8 @@ function parseFeed(xmlText, feedUrl){
   return { name: name || "未命名节目", author, cover, episodes };
 }
 async function subscribeByFeedUrl(feedUrl, preset){
-  const xml = await fetchViaProxies(feedUrl, 25000);
+  // 直连优先（手机网下代理可能不通；RSS 源若给 CORS 头则直连最快），失败回退代理链
+  const xml = await fetchDirectOrProxy(feedUrl, 15000);
   const feed = parseFeed(xml, feedUrl);
   const existing = subs.find(s=>s.feedUrl===feedUrl);
   if(existing){
@@ -860,7 +861,7 @@ async function subscribeByFeedUrl(feedUrl, preset){
 }
 async function refreshSub(sub, silent){
   try{
-    const xml = await fetchViaProxies(sub.feedUrl, 25000);
+    const xml = await fetchDirectOrProxy(sub.feedUrl, 15000);
     const feed = parseFeed(xml, sub.feedUrl);
     sub.name = feed.name || sub.name;
     sub.cover = feed.cover || sub.cover;
@@ -1687,7 +1688,7 @@ $("#rssBtn").addEventListener("click", async ()=>{
   const url = $("#rssInput").value.trim();
   if(!/^https?:\/\//i.test(url)){ toast("请粘贴以 http 开头的 RSS 地址"); return; }
   const btn = $("#rssBtn"); btn.disabled = true; btn.textContent = "抓取中…";
-  setAddStatus("正在通过代理链抓取并解析 RSS…");
+  setAddStatus("正在抓取并解析 RSS（直连优先，失败走代理）…");
   try{
     const { sub, isNew } = await subscribeByFeedUrl(url, null);
     openSubs.add(sub.id); renderSubs();
