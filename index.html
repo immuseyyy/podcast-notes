@@ -361,7 +361,7 @@
       <div class="row" id="downloaderCustomRow" style="margin-top:8px;display:none">
         <input class="txt" id="downloaderCustom" placeholder="输入下载器的包名，如 idm.internet.download.manager" autocomplete="off" />
       </div>
-      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；外部下载器模式把链接直接发送给所选 App（必须和手机里装的是同一款，否则会跳到 Play Store）。链接同时会复制到剪贴板，可手动粘贴兜底。</p>
+      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；外部下载器模式用 VIEW intent 把音频链接直接递给所选 App（必须和手机里装的是同一款，否则会跳到 Play Store）。链接同时会复制到剪贴板，可手动粘贴兜底。</p>
     </div>
 
     <div class="card">
@@ -1415,14 +1415,23 @@ function downloaderName(){
   return "下载器";
 }
 function sendToDownloader(url){
-  // 完整 intent：把 ACTION_SEND 定向投递给用户选定的下载器（等价于 X 浏览器"调用外部下载器"），跳过系统分享面板
-  // 注意：intent 参数里不能出现原始分号，encodeURIComponent 不编码分号，需手动处理
+  // 用 ACTION_VIEW，而不用 ACTION_SEND（实测 1DM Manifest 得出的结论）：
+  // 1DM 把 SEND filter 挂在 UrlHandlerDownloader 上，但该 filter 只有 DEFAULT、没有 BROWSABLE；
+  // 浏览器发 intent:// 会自动带上 BROWSABLE，而 Android 要求 intent 的 category 必须全在 filter 里，
+  // 所以网页发的 SEND 永远匹配不上 1DM，只能回退到 Play Store。
+  // 1DM 的 VIEW filter（含 http/https scheme + 音频扩展名 pathPattern）带有 BROWSABLE，
+  // 专为浏览器调用设计——这才是"X 浏览器可以"的真相：X 是原生 App，发 intent 不会自动加
+  // BROWSABLE，所以它的 SEND 能匹配上；网页没有这个特权，必须走 VIEW。
   const pkg = downloaderPkg();
-  const data = encodeURIComponent(url).replace(/;/g, "%3B");
+  const m = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]+)([^?#]*)(\?[^#]*)?/i.exec(url);
+  const scheme = (m && m[1] || "https").toLowerCase();
+  const rest = m ? (m[2] + (m[3] || "") + (m[4] || "")) : url;
+  // 注意：intent 参数里不能出现原始分号，encodeURIComponent 不编码分号，需手动处理
+  const data = rest.replace(/;/g, "%3B");
   const fallback = encodeURIComponent("https://play.google.com/store/apps/details?id=" + pkg).replace(/;/g, "%3B");
-  window.location.href = "intent:#Intent;action=android.intent.action.SEND;type=text/plain" +
+  window.location.href = "intent://" + data +
+    "#Intent;scheme=" + scheme + ";action=android.intent.action.VIEW" +
     ";package=" + pkg +
-    ";S.android.intent.extra.TEXT=" + data +
     ";S.browser_fallback_url=" + fallback + ";end";
 }
 async function currentProxy(){
@@ -1439,8 +1448,7 @@ async function downloadEpisode(sub, ep){
   const fname = (ep.title || "episode").replace(/[\\/:*?"<>|]/g, " ").slice(0, 80) + ".mp3";
   if(settings.downloadMode==="share"){
     // 外部下载器模式：intent 必须在用户手势内同步触发，先发 intent 再补剪贴板兜底
-    sendToDownloader(ep.audioUrl);
-    try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
+    sendToDownloader(ep.audioUrl);try{ await navigator.clipboard.writeText(ep.audioUrl); }catch(e){}
     toast("已发送到" + downloaderName() + "（若未安装对应 App，链接已复制，可手动粘贴到下载器）");
     return;
   }
