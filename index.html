@@ -112,7 +112,7 @@
   .sres{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
   .sres-item{
     display:flex; gap:11px; align-items:center; text-align:left; width:100%;
-    background:var(--surface2); border-radius:11px; padding:9px 11px; cursor:pointer;
+    background:var(--surface2); border-radius:11px; padding:9px 11px;
   }
   .sres-item .grow{ flex:1; min-width:0; }
   .rss-copy{
@@ -120,6 +120,12 @@
     border-radius:8px; padding:6px 9px; font-size:12.5px; cursor:pointer;
   }
   .rss-copy:active{ transform:scale(.96); }
+  .sub-btn{
+    flex:none; border:none; background:var(--accent); color:var(--accent-ink);
+    border-radius:8px; padding:6px 14px; font-size:13.5px; font-weight:600; cursor:pointer;
+  }
+  .sub-btn:active{ transform:scale(.96); }
+  .sub-btn:disabled{ opacity:.6; }
   .cover{ width:52px; height:52px; border-radius:9px; object-fit:cover; background:var(--accent-soft); flex:none; }
   .cover.sm{ width:40px; height:40px; border-radius:7px; }
   .sres-item .t{ font-weight:650; font-size:15px; line-height:1.35; }
@@ -1639,13 +1645,14 @@ async function doSearch(){
     const j = JSON.parse(txt);
     const results = (j.results || []).filter(r=>r.feedUrl);
     if(!results.length){ setAddStatus("没有搜到带订阅源的节目，换个关键词试试。"); $("#searchResults").innerHTML = ""; return; }
-    setAddStatus("找到 " + results.length + " 个节目，点任意一个即可订阅。");
     $("#searchResults").innerHTML = results.map((r,i) =>
       '<div class="sres-item" data-i="' + i + '">' + coverImg(r.artworkUrl100 || r.artworkUrl60) +
       '<span class="grow"><span class="t">' + esc(r.collectionName || r.trackName || "未命名节目") + '</span><br/>' +
       '<span class="a">' + esc(r.artistName || "") + '</span></span>' +
-      '<button class="rss-copy" data-i="' + i + '" title="复制RSS订阅链接">复制RSS</button></div>'
+      '<button class="rss-copy" data-i="' + i + '" title="复制RSS订阅链接">复制RSS</button>' +
+      '<button class="sub-btn" data-i="' + i + '">订阅</button></div>'
     ).join("");
+    setAddStatus("找到 " + results.length + " 个节目，点「订阅」即可添加。");
     $$("#searchResults .rss-copy").forEach(el=>{
       el.addEventListener("click", async (ev)=>{
         ev.stopPropagation();
@@ -1656,16 +1663,20 @@ async function doSearch(){
         }catch(e){ toast("复制失败，长按手动复制"); }
       });
     });
-    $$("#searchResults .sres-item").forEach((el, i)=>{
+    $$("#searchResults .sub-btn").forEach(el=>{
       el.addEventListener("click", async ()=>{
-        const r = results[i];
+        const r = results[+el.dataset.i];
+        el.disabled = true; el.textContent = "订阅中…";
         setAddStatus("正在抓取「" + (r.collectionName || "") + "」的订阅源…");
         try{
           const { sub, isNew } = await subscribeByFeedUrl(r.feedUrl, { name: r.collectionName, author: r.artistName, cover: r.artworkUrl600 || r.artworkUrl100 });
           openSubs.add(sub.id); renderSubs();
           setAddStatus("");
           toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 300 集）" : "「" + sub.name + "」已在订阅中，已刷新");
-        }catch(e){ setAddStatus("订阅失败：" + (e.message || e)); }
+        }catch(e){
+          setAddStatus("订阅失败：" + (e.message || e));
+          el.disabled = false; el.textContent = "订阅";
+        }
       });
     });
   }catch(e){
