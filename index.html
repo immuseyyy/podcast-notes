@@ -112,8 +112,14 @@
   .sres{ margin-top:12px; display:flex; flex-direction:column; gap:8px; }
   .sres-item{
     display:flex; gap:11px; align-items:center; text-align:left; width:100%;
-    background:var(--surface2); border-radius:11px; padding:9px 11px;
+    background:var(--surface2); border-radius:11px; padding:9px 11px; cursor:pointer;
   }
+  .sres-item .grow{ flex:1; min-width:0; }
+  .rss-copy{
+    flex:none; border:1px solid var(--line); background:var(--surface); color:var(--ink2);
+    border-radius:8px; padding:6px 9px; font-size:12.5px; cursor:pointer;
+  }
+  .rss-copy:active{ transform:scale(.96); }
   .cover{ width:52px; height:52px; border-radius:9px; object-fit:cover; background:var(--accent-soft); flex:none; }
   .cover.sm{ width:40px; height:40px; border-radius:7px; }
   .sres-item .t{ font-weight:650; font-size:15px; line-height:1.35; }
@@ -1618,10 +1624,21 @@ async function doSearch(){
     if(!results.length){ setAddStatus("没有搜到带订阅源的节目，换个关键词试试。"); $("#searchResults").innerHTML = ""; return; }
     setAddStatus("找到 " + results.length + " 个节目，点任意一个即可订阅。");
     $("#searchResults").innerHTML = results.map((r,i) =>
-      '<button class="sres-item" data-i="' + i + '">' + coverImg(r.artworkUrl100 || r.artworkUrl60) +
-      '<span><span class="t">' + esc(r.collectionName || r.trackName || "未命名节目") + '</span><br/>' +
-      '<span class="a">' + esc(r.artistName || "") + '</span></span></button>'
+      '<div class="sres-item" data-i="' + i + '">' + coverImg(r.artworkUrl100 || r.artworkUrl60) +
+      '<span class="grow"><span class="t">' + esc(r.collectionName || r.trackName || "未命名节目") + '</span><br/>' +
+      '<span class="a">' + esc(r.artistName || "") + '</span></span>' +
+      '<button class="rss-copy" data-i="' + i + '" title="复制RSS订阅链接">复制RSS</button></div>'
     ).join("");
+    $$("#searchResults .rss-copy").forEach(el=>{
+      el.addEventListener("click", async (ev)=>{
+        ev.stopPropagation();
+        const r = results[+el.dataset.i];
+        try{
+          await navigator.clipboard.writeText(r.feedUrl || "");
+          toast("RSS链接已复制");
+        }catch(e){ toast("复制失败，长按手动复制"); }
+      });
+    });
     $$("#searchResults .sres-item").forEach((el, i)=>{
       el.addEventListener("click", async ()=>{
         const r = results[i];
