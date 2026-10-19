@@ -231,6 +231,10 @@
     white-space:nowrap; flex:none;
   }
   .minicap svg{ width:15px; height:15px; }
+  /* 历史 / 收藏 */
+  .pbar{ height:4px; background:var(--surface2); border-radius:3px; margin-top:6px; overflow:hidden; }
+  .pbar i{ display:block; height:100%; background:var(--accent); border-radius:3px; }
+  .starbtn.on{ color:var(--accent); }
 
   #toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dockh,90px) + var(--kb) + 14px);
@@ -249,6 +253,8 @@
   <div class="wrap" role="tablist" aria-label="主导航">
     <button class="tab" role="tab" id="tab-subs" aria-selected="true" data-view="subs">订阅</button>
     <button class="tab" role="tab" id="tab-notes" aria-selected="false" data-view="notes">笔记 <span id="noteCount"></span></button>
+    <button class="tab" role="tab" id="tab-history" aria-selected="false" data-view="history">历史</button>
+    <button class="tab" role="tab" id="tab-favs" aria-selected="false" data-view="favs">收藏</button>
     <button class="tab" role="tab" id="tab-settings" aria-selected="false" data-view="settings">设置</button>
     <span class="netdot" id="netDot" title="代理状态"></span>
   </div>
@@ -303,6 +309,24 @@
     <div id="noteList"></div>
   </section>
 
+  <!-- ============ 历史 ============ -->
+  <section class="view" id="view-history" aria-labelledby="tab-history">
+    <div class="toolbar">
+      <span class="hint">自动记录播放，点一条从上次位置继续。</span>
+      <span style="flex:1"></span>
+      <button class="btn small ghost" id="clearHistBtn">清空历史</button>
+    </div>
+    <div id="histList"></div>
+  </section>
+
+  <!-- ============ 收藏 ============ -->
+  <section class="view" id="view-favs" aria-labelledby="tab-favs">
+    <div class="toolbar">
+      <span class="hint">加星的单集都在这里，点播直接播放。</span>
+    </div>
+    <div id="favList"></div>
+  </section>
+
   <!-- ============ 设置 ============ -->
   <section class="view" id="view-settings" aria-labelledby="tab-settings">
     <div class="card">
@@ -335,6 +359,17 @@
       <div class="seg" role="group" aria-label="打点是否暂停播放">
         <button id="capKeep" aria-pressed="true">打点不暂停</button>
         <button id="capPauseBtn" aria-pressed="false">打点暂停播放</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>云端同步</h3>
+      <p class="hint">播放历史与收藏自动同步到 Cloudflare KV（Worker 需绑定 SYNC_KV 并设置 SYNC_TOKEN）。本地照常使用，云端只做备份与换机恢复。</p>
+      <label class="flabel" for="syncTokenInput">同步口令（与 Worker 的 SYNC_TOKEN 一致）</label>
+      <input class="txt" id="syncTokenInput" type="password" placeholder="输入同步口令" autocomplete="off" />
+      <div class="kv"><span>同步状态</span><b id="syncInfo">未配置</b></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" id="syncNowBtn">立即同步</button>
       </div>
     </div>
 
@@ -430,6 +465,7 @@ const I = {
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5A8 8 0 1 1 4 12.5"/><path d="M4 4v5h5"/></svg>',
   fwd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5A8 8 0 1 0 20 12.5"/><path d="M20 4v5h-5"/></svg>',
   pin:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-10.4A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.6C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10.4" r="2.4" fill="var(--accent)"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.4l6.5-.9z"/></svg>',
   mic:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4.5L20 8.5a2.1 2.1 0 0 0-3-3L5.5 17z"/><path d="M13.5 7l3 3"/></svg>'
 };
@@ -510,7 +546,7 @@ async function fetchText(url, ms){
 }
 
 /* ---------- 存储（统一命名空间 podmemo.*） ---------- */
-const LS = { subs:"podmemo.subs.v1", notes:"podmemo.notes.v1", settings:"podmemo.settings.v1", proxy:"podmemo.proxy.v1" };
+const LS = { subs:"podmemo.subs.v1", notes:"podmemo.notes.v1", settings:"podmemo.settings.v1", proxy:"podmemo.proxy.v1", history:"podmemo.history.v1", favs:"podmemo.favs.v1", sync:"podmemo.sync.v1" };
 function lsGet(key, dflt){
   try{ const v = localStorage.getItem(key); return v==null ? dflt : JSON.parse(v); }
   catch(e){ return dflt; }
@@ -521,12 +557,16 @@ function lsSet(key, val){
 }
 let subs = lsGet(LS.subs, []);            // [{id,name,author,cover,feedUrl,group,episodes:[{id,title,pubDate,duration,audioUrl,cover}],updatedAt}]
 let notes = lsGet(LS.notes, []);          // [{id,subId,subName,epId,epTitle,audioUrl,time,text,createdAt}]
-let settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false }, lsGet(LS.settings, {}));
+let settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"" }, lsGet(LS.settings, {}));
 let proxyState = Object.assign({ chosen:"", probedAt:0 }, lsGet(LS.proxy, {}));
 const saveSubs = ()=>lsSet(LS.subs, subs);
 const saveNotes = ()=>lsSet(LS.notes, notes);
 const saveSettings = ()=>lsSet(LS.settings, settings);
 const saveProxy = ()=>lsSet(LS.proxy, proxyState);
+let playHist = lsGet(LS.history, []);   // 播放历史
+let favs = lsGet(LS.favs, []);          // 收藏单集
+const saveHist = ()=>lsSet(LS.history, playHist);
+const saveFavs = ()=>lsSet(LS.favs, favs);
 const MAX_EPS = 50;
 
 /* ---------- 代理链 ---------- */
@@ -817,7 +857,7 @@ function renderSubs(){
           (ep.duration!=null ? '<span>' + esc(fmtDur(ep.duration)) + '</span>' : '') +
           '<span>' + notes.filter(n=>n.epId===ep.id).length + ' 条笔记</span>' +
         '</div></div>' +
-        '<div class="acts"><button class="iconbtn" data-act="dl" aria-label="下载本集" title="下载本集">' + I.dl + '</button></div>' +
+        '<div class="acts"><button class="iconbtn starbtn' + (isFav(sub.id, ep.id) ? " on" : "") + '" data-act="fav" aria-label="收藏" title="收藏">' + I.star + '</button><button class="iconbtn" data-act="dl" aria-label="下载本集" title="下载本集">' + I.dl + '</button></div>' +
       '</div>';
     }).join("");
     return '<div class="sub" data-sub="' + esc(sub.id) + '">' +
@@ -859,6 +899,7 @@ $("#subList").addEventListener("click", e=>{
   if(!ep) return;
   if(act==="play") playEpisode(sub, ep, 0, true);
   if(act==="dl") downloadEpisode(sub, ep);
+  if(act==="fav"){ toggleFav(sub, ep); return; }
 });
 
 /* ---------- 渲染：笔记 ---------- */
@@ -905,6 +946,243 @@ $("#noteList").addEventListener("click", e=>{
   }
 });
 
+/* ---------- 播放历史 ---------- */
+let lastHistKey = "";
+let lastHistSave = 0;
+let lastSyncMarkPos = 0;
+function epKey(subId, epId){ return subId + "|" + epId; }
+function curHist(){
+  if(!current) return null;
+  return playHist.find(x=>x.key===epKey(current.sub.id, current.ep.id)) || null;
+}
+function pruneHist(){
+  playHist.sort((a,b)=>(b.lastPlayedAt||0)-(a.lastPlayedAt||0));
+  if(playHist.length > 100) playHist.length = 100;
+}
+function recordHistory(sub, ep, startAt){
+  const key = epKey(sub.id, ep.id);
+  const now = Date.now();
+  let r = playHist.find(x=>x.key===key);
+  if(!r){
+    r = { key, subId: sub.id, subName: epDisplayName(sub, ep), epId: ep.id, epTitle: ep.title,
+          audioUrl: ep.audioUrl, cover: ep.cover || sub.cover || "",
+          position: 0, duration: Math.floor(ep.duration || 0), playCount: 0, finished: false,
+          startedAt: now, lastPlayedAt: now, updatedAt: now };
+    playHist.unshift(r);
+  }
+  if(lastHistKey !== key) r.playCount = (r.playCount || 0) + 1;
+  r.lastPlayedAt = now; r.updatedAt = now; r.finished = false;
+  if(startAt) r.position = Math.floor(startAt);
+  if(ep.title) r.epTitle = ep.title;
+  if(ep.audioUrl) r.audioUrl = ep.audioUrl;
+  lastHistKey = key;
+  pruneHist(); saveHist(); markSyncDirty();
+  if($("#view-history").classList.contains("on")) renderHistory();
+}
+function saveHistPosition(){
+  const r = curHist(); if(!r) return;
+  r.position = Math.floor(audio.currentTime || 0);
+  if(audio.duration) r.duration = Math.floor(audio.duration);
+  r.lastPlayedAt = Date.now(); r.updatedAt = r.lastPlayedAt;
+  saveHist(); markSyncDirty();
+}
+function histTick(){
+  if(!current || audio.paused) return;
+  const r = curHist(); if(!r) return;
+  r.position = Math.floor(audio.currentTime || 0);
+  if(audio.duration) r.duration = Math.floor(audio.duration);
+  const now = Date.now();
+  if(now - lastHistSave > 15000){
+    lastHistSave = now;
+    r.lastPlayedAt = now; r.updatedAt = now;
+    saveHist();
+    // 播放中每 2 分钟才标记一次同步，避免 KV 写超限
+    if(now - lastSyncMarkPos > 120000){ lastSyncMarkPos = now; markSyncDirty(); }
+  }
+}
+function markHistFinished(){
+  const r = curHist(); if(!r) return;
+  r.finished = true;
+  if(r.duration) r.position = r.duration;
+  r.updatedAt = Date.now(); r.lastPlayedAt = r.updatedAt;
+  saveHist(); markSyncDirty();
+  if($("#view-history").classList.contains("on")) renderHistory();
+}
+function playHistoryItem(h){
+  const sub = subs.find(s=>s.id===h.subId);
+  const ep = sub && sub.episodes.find(x=>x.id===h.epId);
+  const startAt = (!h.finished && (h.position||0) > 10) ? h.position : 0;
+  if(sub && ep) playEpisode(sub, ep, startAt, true);
+  else playEpisode(
+    { id: h.subId || "hist", name: h.subName || "历史节目", cover: h.cover || "" },
+    { id: h.epId || "hist", title: h.epTitle || "未知单集", audioUrl: h.audioUrl, cover: h.cover || "" },
+    startAt, true);
+  toast(startAt ? "从 " + fmtTime(startAt) + " 继续播放" : "开始播放");
+}
+function renderHistory(){
+  const box = $("#histList");
+  if(!playHist.length){
+    box.innerHTML = '<div class="empty">还没有播放历史。<br/>播放任意单集会自动记录，支持断点续播。</div>';
+    return;
+  }
+  const sorted = playHist.slice().sort((a,b)=>(b.lastPlayedAt||0)-(a.lastPlayedAt||0));
+  box.innerHTML = sorted.map(h=>{
+    const pct = h.duration ? Math.min(100, Math.round((h.position||0)/h.duration*100)) : 0;
+    return '<div class="ep" data-hkey="' + esc(h.key) + '">' +
+      '<button class="playbtn" data-hact="play" aria-label="播放">' + I.play + '</button>' +
+      '<div class="emain"><div class="et">' + esc(h.epTitle) + '</div>' +
+      '<div class="em"><span>' + esc(h.subName || "") + '</span>' +
+      (h.finished ? '<span>已播完</span>' : (h.duration ? '<span>剩余 ' + esc(fmtTime(Math.max(0, h.duration - (h.position||0)))) + '</span>' : '')) +
+      '<span>' + esc(fmtDate(h.lastPlayedAt)) + '</span></div>' +
+      '<div class="pbar"><i style="width:' + pct + '%"></i></div></div>' +
+      '<div class="acts"><button class="iconbtn" data-hact="del" aria-label="删除" title="删除">' + I.trash + '</button></div>' +
+      '</div>';
+  }).join("");
+}
+$("#histList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-hact]"); if(!btn) return;
+  const el = e.target.closest("[data-hkey]"); if(!el) return;
+  const h = playHist.find(x=>x.key===el.dataset.hkey); if(!h) return;
+  const act = btn.dataset.hact;
+  if(act==="play") playHistoryItem(h);
+  else if(act==="del"){
+    playHist = playHist.filter(x=>x.key!==h.key);
+    saveHist(); markSyncDirty(); renderHistory();
+    toast("已删除这条历史");
+  }
+});
+$("#clearHistBtn").addEventListener("click", async ()=>{
+  if(!playHist.length) return;
+  if(!(await uiConfirm("清空全部播放历史？"))) return;
+  playHist = []; saveHist(); markSyncDirty(); renderHistory();
+  toast("历史已清空");
+});
+
+/* ---------- 收藏 ---------- */
+function isFav(subId, epId){ return favs.some(f=>f.key===epKey(subId, epId)); }
+function toggleFav(sub, ep){
+  const key = epKey(sub.id, ep.id);
+  const i = favs.findIndex(f=>f.key===key);
+  if(i >= 0){ favs.splice(i, 1); toast("已取消收藏"); }
+  else{
+    favs.unshift({ key, subId: sub.id, subName: epDisplayName(sub, ep), epId: ep.id, epTitle: ep.title,
+      audioUrl: ep.audioUrl, cover: ep.cover || sub.cover || "",
+      createdAt: Date.now(), updatedAt: Date.now() });
+    toast("已收藏");
+  }
+  saveFavs(); markSyncDirty(); renderSubs();
+  if($("#view-favs").classList.contains("on")) renderFavs();
+}
+function renderFavs(){
+  const box = $("#favList");
+  if(!favs.length){
+    box.innerHTML = '<div class="empty">还没有收藏。<br/>在单集列表点星标即可收藏。</div>';
+    return;
+  }
+  box.innerHTML = favs.map(f=>{
+    return '<div class="ep" data-fkey="' + esc(f.key) + '">' +
+      '<button class="playbtn" data-fact="play" aria-label="播放">' + I.play + '</button>' +
+      '<div class="emain"><div class="et">' + esc(f.epTitle) + '</div>' +
+      '<div class="em"><span>' + esc(f.subName || "") + '</span><span>' + esc(fmtDate(f.createdAt)) + ' 收藏</span></div></div>' +
+      '<div class="acts"><button class="iconbtn starbtn on" data-fact="unfav" aria-label="取消收藏" title="取消收藏">' + I.star + '</button>' +
+      '<button class="iconbtn" data-fact="dl" aria-label="下载本集" title="下载本集">' + I.dl + '</button></div>' +
+      '</div>';
+  }).join("");
+}
+$("#favList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-fact]"); if(!btn) return;
+  const el = e.target.closest("[data-fkey]"); if(!el) return;
+  const f = favs.find(x=>x.key===el.dataset.fkey); if(!f) return;
+  const act = btn.dataset.fact;
+  if(act==="unfav"){ favs = favs.filter(x=>x.key!==f.key); saveFavs(); markSyncDirty(); renderFavs(); renderSubs(); toast("已取消收藏"); }
+  else if(act==="dl"){ downloadEpisode({ id:f.subId, name:f.subName, cover:f.cover }, { id:f.epId, title:f.epTitle, audioUrl:f.audioUrl }); }
+  else if(act==="play"){
+    const sub = subs.find(s=>s.id===f.subId);
+    const ep = sub && sub.episodes.find(x=>x.id===f.epId);
+    if(sub && ep) playEpisode(sub, ep, 0, true);
+    else playHistoryItem({ subId:f.subId, subName:f.subName, epId:f.epId, epTitle:f.epTitle, audioUrl:f.audioUrl, cover:f.cover, position:0, finished:true });
+  }
+});
+
+/* ---------- 云端同步（Cloudflare KV） ---------- */
+const syncMeta = Object.assign({ lastPushAt:0, lastPullAt:0 }, lsGet(LS.sync, {}));
+const saveSyncMeta = ()=>lsSet(LS.sync, syncMeta);
+const syncSt = { dirty:false, timer:null, syncing:false };
+function fmtHM(ts){
+  const d = new Date(ts); if(isNaN(d)) return "";
+  return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+}
+function syncBase(){
+  try{ return new URL(normalizeTemplate(settings.workerTemplate)).origin; }
+  catch(e){ return ""; }
+}
+function syncReady(){ return !!(syncBase() && (settings.syncToken || "").trim()); }
+function updateSyncUI(msg){ const el = $("#syncInfo"); if(el) el.textContent = msg || ""; }
+function markSyncDirty(){
+  if(!syncReady()) return;
+  syncSt.dirty = true;
+  clearTimeout(syncSt.timer);
+  syncSt.timer = setTimeout(syncPush, 8000);
+}
+function mergeLocal(local, incoming){
+  const map = new Map(local.map(r=>[r.key, r]));
+  for(const r of incoming){
+    if(!r || !r.key) continue;
+    const cur = map.get(r.key);
+    if(!cur || (r.updatedAt||0) > (cur.updatedAt||0)) map.set(r.key, r);
+  }
+  return [...map.values()];
+}
+async function syncPush(){
+  if(syncSt.syncing || !syncSt.dirty || !syncReady()) return;
+  syncSt.syncing = true;
+  try{
+    const r = await fetch(syncBase() + "/api/sync/push", {
+      method:"POST", headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ token: settings.syncToken.trim(), history: playHist, favorites: favs })
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
+    syncSt.dirty = false;
+    syncMeta.lastPushAt = j.serverTime || Date.now(); saveSyncMeta();
+    updateSyncUI("已同步 " + fmtHM(syncMeta.lastPushAt));
+  }catch(e){ updateSyncUI("同步失败：" + (e.message || e)); }
+  finally{ syncSt.syncing = false; }
+}
+async function syncPull(silent){
+  if(syncSt.syncing || !syncReady()) return;
+  syncSt.syncing = true;
+  try{
+    const r = await fetch(syncBase() + "/api/sync/pull", {
+      method:"POST", headers:{ "content-type":"application/json" },
+      body: JSON.stringify({ token: settings.syncToken.trim(), since: syncMeta.lastPullAt || 0 })
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok) throw new Error(j.error || ("HTTP " + r.status));
+    let changed = false;
+    if(j.history && j.history.length){ playHist = mergeLocal(playHist, j.history); pruneHist(); saveHist(); changed = true; }
+    if(j.favorites && j.favorites.length){ favs = mergeLocal(favs, j.favorites); saveFavs(); changed = true; }
+    syncMeta.lastPullAt = j.serverTime || Date.now(); saveSyncMeta();
+    if(changed){ renderHistory(); renderFavs(); renderSubs(); }
+    updateSyncUI("已同步 " + fmtHM(syncMeta.lastPullAt));
+    if(!silent) toast("已从云端拉取更新");
+  }catch(e){
+    updateSyncUI("同步失败：" + (e.message || e));
+    if(!silent) toast("拉取失败：" + (e.message || e));
+  }
+  finally{ syncSt.syncing = false; }
+}
+$("#syncNowBtn").addEventListener("click", async ()=>{
+  settings.syncToken = $("#syncTokenInput").value.trim();
+  saveSettings(); renderSettingsInfo();
+  if(!syncReady()){ toast("请先填写自建 Worker 地址与同步口令"); updateSyncUI("未配置"); return; }
+  updateSyncUI("同步中…");
+  await syncPull(false);
+  syncSt.dirty = true;
+  await syncPush();
+  renderHistory(); renderFavs();
+});
+
 /* ---------- 播放器 ---------- */
 const audio = $("#audio");
 let current = null;        // {sub, ep}
@@ -920,6 +1198,7 @@ function playEpisode(sub, ep, startAt, autoplay){
   const sameEp = current && current.ep.id===ep.id && current.sub.id===sub.id;
   current = { sub, ep };
   nowPlaying = { subId: sub.id, epId: ep.id };
+  recordHistory(sub, ep, startAt || 0);
   if(!sameEp){
     audio.src = ep.audioUrl;
     audio.playbackRate = parseFloat($("#speedBtn").textContent) || 1;
@@ -952,10 +1231,13 @@ audio.addEventListener("loadedmetadata", ()=>{
 audio.addEventListener("timeupdate", ()=>{
   if(!seeking) $("#seek").value = audio.duration ? Math.round(audio.currentTime / audio.duration * 1000) : 0;
   $("#tCur").textContent = fmtTime(audio.currentTime);
+  histTick();
 });
 audio.addEventListener("play", ()=>{ updatePlayBtn(); renderSubs(); });
-audio.addEventListener("pause", ()=>{ updatePlayBtn(); renderSubs(); });
-audio.addEventListener("ended", updatePlayBtn);
+audio.addEventListener("pause", ()=>{ updatePlayBtn(); renderSubs(); saveHistPosition(); });
+audio.addEventListener("ended", ()=>{ updatePlayBtn(); markHistFinished(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) saveHistPosition(); });
+window.addEventListener("pagehide", saveHistPosition);
 audio.addEventListener("error", ()=>{ if(current) toast("音频加载失败，请检查网络"); });
 $("#seek").addEventListener("input", e=>{
   seeking = true;
@@ -1189,6 +1471,8 @@ function switchView(name){
   $$(".tab").forEach(t=>t.setAttribute("aria-selected", t.dataset.view===name ? "true" : "false"));
   $$("section.view").forEach(v=>v.classList.toggle("on", v.id==="view-"+name));
   if(name==="settings") renderSettingsInfo();
+  if(name==="history") renderHistory();
+  if(name==="favs") renderFavs();
   window.scrollTo({top:0});
 }
 $$(".tab").forEach(t=>t.addEventListener("click", ()=>switchView(t.dataset.view)));
@@ -1273,11 +1557,15 @@ function renderSettingsInfo(){
   const ck = $("#capKeep"), cp = $("#capPauseBtn");
   ck.setAttribute("aria-pressed", !settings.capPause ? "true" : "false");
   cp.setAttribute("aria-pressed", settings.capPause ? "true" : "false");
+  $("#syncTokenInput").value = settings.syncToken || "";
+  if(!syncReady()) updateSyncUI("未配置");
+  else if(syncMeta.lastPushAt) updateSyncUI("已同步 " + fmtHM(syncMeta.lastPushAt));
+  else updateSyncUI("已配置，未同步");
   let bytes = 0;
-  [LS.subs, LS.notes, LS.settings, LS.proxy].forEach(k=>{ const v = localStorage.getItem(k); if(v) bytes += v.length * 2; });
+  [LS.subs, LS.notes, LS.settings, LS.proxy, LS.history, LS.favs, LS.sync].forEach(k=>{ const v = localStorage.getItem(k); if(v) bytes += v.length * 2; });
   $("#dataSize").textContent = bytes ? (bytes/1024).toFixed(1) + " KB（估算）" : "0 KB";
   const epCount = subs.reduce((a,s)=>a + s.episodes.length, 0);
-  $("#dataCounts").textContent = subs.length + " 个订阅 · " + epCount + " 集缓存 · " + notes.length + " 条笔记";
+  $("#dataCounts").textContent = subs.length + " 个订阅 · " + epCount + " 集缓存 · " + notes.length + " 条笔记 · " + playHist.length + " 条历史 · " + favs.length + " 个收藏";
 }
 $("#dlBrowser").addEventListener("click", ()=>{ settings.downloadMode = "browser"; saveSettings(); renderSettingsInfo(); toast("下载方式：浏览器直接下载"); });
 $("#dlShare").addEventListener("click", ()=>{ settings.downloadMode = "share"; saveSettings(); renderSettingsInfo(); toast("下载方式：复制链接到 1DM"); });
@@ -1300,7 +1588,7 @@ $("#proxyRetest").addEventListener("click", async ()=>{
   renderSettingsInfo();
 });
 $("#backupBtn").addEventListener("click", ()=>{
-  const payload = { app:"podmemo-standalone", version:1, exportedAt:new Date().toISOString(), subs, notes, settings, proxy: proxyState };
+  const payload = { app:"podmemo-standalone", version:1, exportedAt:new Date().toISOString(), subs, notes, settings, proxy: proxyState, history: playHist, favs };
   downloadFile("播客速记备份-" + fmtDate(new Date().toISOString()) + ".json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
   toast("备份已导出");
 });
@@ -1310,11 +1598,13 @@ $("#restoreFile").addEventListener("change", async e=>{
   try{
     const j = JSON.parse(await f.text());
     if(!j || !Array.isArray(j.subs) || !Array.isArray(j.notes)) throw new Error("文件格式不对");
-    if(!(await uiConfirm("导入将覆盖当前全部订阅与笔记，继续？"))) return;
+    if(!(await uiConfirm("导入将覆盖当前全部数据（订阅、笔记、历史、收藏），继续？"))) return;
     subs = j.subs; notes = j.notes;
-    settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false }, j.settings || {});
-    saveSubs(); saveNotes(); saveSettings();
-    renderSubs(); renderNotes(); renderSettingsInfo();
+    playHist = Array.isArray(j.history) ? j.history : [];
+    favs = Array.isArray(j.favs) ? j.favs : [];
+    settings = Object.assign({ workerTemplate:"", downloadMode:"browser", capPause:false, syncToken:"" }, j.settings || {});
+    saveSubs(); saveNotes(); saveHist(); saveFavs(); saveSettings();
+    renderSubs(); renderNotes(); renderHistory(); renderFavs(); renderSettingsInfo();
     toast("备份已恢复");
   }catch(err){ toast("导入失败：" + (err.message || err)); }
   e.target.value = "";
@@ -1381,12 +1671,13 @@ new ResizeObserver(()=>{ if(current) setDockVisible(); }).observe($("#dock"));
 
 /* ---------- 启动 ---------- */
 (async function init(){
-  renderSubs(); renderNotes();
+  renderSubs(); renderNotes(); renderHistory(); renderFavs();
   $("#workerInput").value = settings.workerTemplate || "";
   await loadSameOrigin();
   renderSubs();
   updateProxyUI();
   probeProxies(); // 并行测速选最快代理，结果写入 localStorage
+  if(syncReady()){ updateSyncUI("同步中…"); syncPull(true); } else { updateSyncUI("未配置"); }
 })();
 </script>
 </body>
