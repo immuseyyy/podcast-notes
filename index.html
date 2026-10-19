@@ -1674,6 +1674,7 @@ async function doSearch(){
           openSubs.add(sub.id); renderSubs();
           setAddStatus("");
           toast(isNew ? "已订阅「" + sub.name + "」，共 " + sub.episodes.length + " 集（保留最近 300 集）" : "「" + sub.name + "」已在订阅中，已刷新");
+          el.textContent = "已订阅";
         }catch(e){
           setAddStatus("订阅失败：" + (e.message || e));
           el.disabled = false; el.textContent = "订阅";
