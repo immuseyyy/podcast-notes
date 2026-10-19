@@ -1515,11 +1515,12 @@ async function downloadEpisode(sub, ep){
     return;
   }
   // 浏览器直接下载：优先直链（CDN 给 CORS 头时最快、不耗代理流量），失败静默回退代理；再失败则新标签页打开
-  toast("正在下载…");
+  // 进度 toast 常驻（120s，进度更新会续期），下载完成/失败时被下一条 toast 顶掉
+  toast("正在下载…", 120000);
   try{
     let blob = null;
     try{
-      blob = await fetchBlobDirect(ep.audioUrl, 30000, pct=>toast("正在下载… " + pct + "%"));
+      blob = await fetchBlobDirect(ep.audioUrl, 30000, pct=>toast("正在下载… " + pct + "%", 120000));
     }catch(de){
       const p = await currentProxy().catch(()=>null);
       if(!p) throw de;
