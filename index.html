@@ -222,6 +222,15 @@
   #dock.mini #miniPlay{ display:inline-flex; }
   #dock.mini #dockDl{ display:none; }
   #dock.mini .inner{ padding:7px 14px; }
+  /* 迷你条上的打点按钮 */
+  #miniCap{ display:none; }
+  #dock.mini #miniCap{ display:inline-flex; }
+  .minicap{
+    background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:13px;
+    border-radius:10px; padding:7px 10px; display:inline-flex; align-items:center; gap:5px;
+    white-space:nowrap; flex:none;
+  }
+  .minicap svg{ width:15px; height:15px; }
 
   #toast{
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--dockh,90px) + var(--kb) + 14px);
@@ -359,6 +368,7 @@
       <img class="cover sm" id="dockCover" alt="" loading="lazy" decoding="async" fetchpriority="low" />
       <div class="ntitle"><span id="dockTitle">未在播放</span><div class="nsub" id="dockSub"></div></div>
       <button class="iconbtn" id="miniPlay" aria-label="播放或暂停" title="播放或暂停"></button>
+      <button class="minicap" id="miniCap" aria-label="打点" title="打点"></button>
       <button class="iconbtn" id="dockDl" aria-label="下载本集" title="下载本集"></button>
       <button class="iconbtn" id="dockFold" aria-label="收起或展开播放器" title="收起或展开"></button>
     </div>
@@ -922,7 +932,7 @@ function playEpisode(sub, ep, startAt, autoplay){
   const cv = $("#dockCover");
   if(ep.cover || sub.cover){ cv.src = ep.cover || sub.cover; } else { cv.removeAttribute("src"); }
   $("#composer").classList.add("on");
-  if(!editingNoteId){ capturedTime = null; $("#capTime").textContent = "—"; $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记"; }
+  if(!editingNoteId){ capturedTime = null; capPausedByApp = false; $("#capTime").textContent = "—"; $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记"; }
   setDockVisible(); renderSubs(); updatePlayBtn(); setupMediaSession();
   if(autoplay){ const p = audio.play(); if(p) p.catch(()=>toast("播放失败：音频地址不可达")); }
 }
@@ -987,6 +997,8 @@ $("#speedBtn").addEventListener("click", ()=>{
 $("#dockDl").innerHTML = I.dl;
 $("#dockFold").innerHTML = I.chevD;
 $("#miniPlay").innerHTML = I.play;
+$("#miniCap").innerHTML = I.pin + "打点";
+$("#miniCap").addEventListener("click", ()=>{ setDockMini(false); $("#capBtn").click(); });
 $("#dockDl").addEventListener("click", ()=>{ if(current) downloadEpisode(current.sub, current.ep); });
 function setupMediaSession(){
   if(!("mediaSession" in navigator) || !current) return;
@@ -1008,13 +1020,15 @@ function setupMediaSession(){
 /* ---------- 打点与笔记编辑 ---------- */
 let capturedTime = null;
 let editingNoteId = null;
+let capPausedByApp = false; // 打点时是否由 App 自动暂停了播放（保存/取消后要恢复）
 $("#capBtn").innerHTML = I.pin + "打点";
 $("#capBtn").addEventListener("click", ()=>{
   if(!current){ toast("先播放一集播客"); return; }
   capturedTime = Math.floor(audio.currentTime);
   $("#capTime").textContent = fmtTime(capturedTime);
   $("#capHint").textContent = "已冻结时间点，写完点保存";
-  if(settings.capPause && !audio.paused) audio.pause();
+  if(settings.capPause && !audio.paused){ audio.pause(); capPausedByApp = true; }
+  else capPausedByApp = false;
   $("#noteText").focus();
 });
 $("#saveNoteBtn").addEventListener("click", ()=>{
@@ -1037,6 +1051,8 @@ $("#saveNoteBtn").addEventListener("click", ()=>{
     });
     saveNotes();
     toast("已保存到 " + fmtTime(noteTime));
+    // 打点时自动暂停的，保存后恢复播放
+    if(capPausedByApp){ capPausedByApp = false; if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>{}); } }
   }
   capturedTime = null; $("#capTime").textContent = "—";
   $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
@@ -1061,6 +1077,7 @@ function startEditNote(n){
 }
 $("#cancelEditBtn").addEventListener("click", ()=>{
   editingNoteId = null; capturedTime = null;
+  if(capPausedByApp){ capPausedByApp = false; if(audio.paused){ const p = audio.play(); if(p) p.catch(()=>{}); } }
   $("#noteText").value = ""; $("#capTime").textContent = "—";
   $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
   $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
