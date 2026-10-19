@@ -1,0 +1,31 @@
+name: 定时预抓 RSS
+
+# 每天自动抓取 data/subscriptions.json 里列出的订阅源，
+# 生成 data/feeds.json。App 启动时优先读这个同源文件，
+# 不走代理、不跨域，日常刷新完全不依赖任何外部服务。
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # 每天 UTC 03:30（北京时间 11:30）
+  workflow_dispatch:        # 允许在 Actions 页面手动触发
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 feedparser
+        run: pip install feedparser
+
+      - name: 抓取订阅源并生成 feeds.json
+        run: python3 .github/workflows/fetch_feeds.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "podcast-notes-bot"
+          git config user.email "podcast-notes-bot@example.com"
+          git add data/feeds.json
+          git diff --cached --quiet || (git commit -m "chore: 每日 RSS 预抓 [skip ci]" && git push)

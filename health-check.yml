@@ -1,0 +1,27 @@
+name: 代理健康检查
+
+# 每天自动检测 proxies.json 里的公共代理是否可用，
+# 失效的自动剔除，按延迟排序后提交回仓库。App 启动时会拉取这份名单。
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 每天 UTC 03:00（北京时间 11:00）
+  workflow_dispatch:       # 允许在 Actions 页面手动触发
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检测代理可用性并更新名单
+        run: python3 .github/workflows/check_proxies.py
+
+      - name: 提交更新
+        run: |
+          git config user.name "podcast-notes-bot"
+          git config user.email "podcast-notes-bot@example.com"
+          git add proxies.json
+          git diff --cached --quiet || (git commit -m "chore: 每日代理健康检查 [skip ci]" && git push)
