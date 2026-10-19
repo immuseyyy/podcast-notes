@@ -555,6 +555,18 @@ async function fetchText(url, ms){
     return await r.text();
   } finally { clearTimeout(to); }
 }
+/* 直链取音频 blob（需 CDN 给 CORS 头；不支持则抛错由调用方回退代理） */
+async function fetchBlobDirect(url, ms){
+  const ctl = new AbortController();
+  const to = setTimeout(()=>ctl.abort(), ms || 12000);
+  try{
+    const r = await fetch(url, {signal: ctl.signal});
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    const b = await r.blob();
+    if(!b.size) throw new Error("empty");
+    return b;
+  } finally { clearTimeout(to); }
+}
 
 /* ---------- 存储（统一命名空间 podmemo.*） ---------- */
 const LS = { subs:"podmemo.subs.v1", notes:"podmemo.notes.v1", settings:"podmemo.settings.v1", proxy:"podmemo.proxy.v1", history:"podmemo.history.v1", favs:"podmemo.favs.v1", sync:"podmemo.sync.v1" };
@@ -1478,24 +1490,29 @@ async function downloadEpisode(sub, ep){
     toast("已发送到" + downloaderName() + "（若未安装对应 App，链接已复制，可手动粘贴到下载器）");
     return;
   }
-  // 浏览器直接下载：经代理取 blob 后真下载（带文件名）；失败回退到新标签页打开
-  const p = await currentProxy().catch(()=>null);
-  if(p){
+  // 浏览器直接下载：优先直链（CDN 给 CORS 头时最快、不耗代理流量），失败回退代理；再失败则新标签页打开
+  try{
+    let blob = null;
     try{
-      toast("正在经代理下载…");
+      toast("正在直连下载…");
+      blob = await fetchBlobDirect(ep.audioUrl, 12000);
+    }catch(de){
+      const p = await currentProxy().catch(()=>null);
+      if(!p) throw de;
+      toast("直连失败，经代理下载…");
       const r = await fetch(viaProxy(p, ep.audioUrl));
       if(!r.ok) throw new Error("HTTP " + r.status);
-      const blob = await r.blob();
+      blob = await r.blob();
       if(!blob.size) throw new Error("empty");
-      const obj = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = obj; a.download = fname;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(obj), 120000);
-      toast("已开始下载：" + fname);
-      return;
-    }catch(e){ /* 走下面的回退 */ }
-  }
+    }
+    const obj = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = obj; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(obj), 120000);
+    toast("已开始下载：" + fname);
+    return;
+  }catch(e){ /* 走下面的回退 */ }
   window.open(ep.audioUrl, "_blank", "noopener");
   toast("直接下载失败，已打开音频页（可长按手动保存）");
 }
