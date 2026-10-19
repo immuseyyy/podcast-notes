@@ -130,6 +130,15 @@
   .cover.sm{ width:40px; height:40px; border-radius:7px; }
   .sres-item .t{ font-weight:650; font-size:15px; line-height:1.35; }
   .sres-item .a{ color:var(--ink2); font-size:13px; }
+  /* 我的（历史+收藏）子 tab */
+  .subtabs{ display:flex; gap:8px; margin-bottom:12px; }
+  .subtab{
+    flex:1; padding:9px; border-radius:10px; font-size:14.5px; font-weight:600;
+    background:var(--surface2); color:var(--ink2); cursor:pointer;
+  }
+  .subtab[aria-selected="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .libpane{ display:none; }
+  .libpane.on{ display:block; }
   .morebtn{
     display:block; width:100%; padding:11px; margin:4px 0 8px;
     background:var(--surface2); border-radius:10px; color:var(--accent);
@@ -271,8 +280,7 @@
   <div class="wrap" role="tablist" aria-label="主导航">
     <button class="tab" role="tab" id="tab-subs" aria-selected="true" data-view="subs">订阅</button>
     <button class="tab" role="tab" id="tab-notes" aria-selected="false" data-view="notes">笔记 <span id="noteCount"></span></button>
-    <button class="tab" role="tab" id="tab-history" aria-selected="false" data-view="history">历史</button>
-    <button class="tab" role="tab" id="tab-favs" aria-selected="false" data-view="favs">收藏</button>
+    <button class="tab" role="tab" id="tab-library" aria-selected="false" data-view="library">我的</button>
     <button class="tab" role="tab" id="tab-settings" aria-selected="false" data-view="settings">设置</button>
     <span class="netdot" id="netDot" title="代理状态"></span>
   </div>
@@ -328,21 +336,26 @@
   </section>
 
   <!-- ============ 历史 ============ -->
-  <section class="view" id="view-history" aria-labelledby="tab-history">
-    <div class="toolbar">
-      <span class="hint">自动记录播放，点一条从上次位置继续。</span>
-      <span style="flex:1"></span>
-      <button class="btn small ghost" id="clearHistBtn">清空历史</button>
+  <!-- ============ 我的（历史 + 收藏） ============ -->
+  <section class="view" id="view-library" aria-labelledby="tab-library">
+    <div class="subtabs" role="tablist" aria-label="我的">
+      <button class="subtab" role="tab" data-lib="history" aria-selected="true">历史</button>
+      <button class="subtab" role="tab" data-lib="favs" aria-selected="false">收藏</button>
     </div>
-    <div id="histList"></div>
-  </section>
-
-  <!-- ============ 收藏 ============ -->
-  <section class="view" id="view-favs" aria-labelledby="tab-favs">
-    <div class="toolbar">
-      <span class="hint">加星的单集都在这里，点播直接播放。</span>
+    <div class="libpane on" id="lib-history">
+      <div class="toolbar">
+        <span class="hint">自动记录播放，点一条从上次位置继续。</span>
+        <span style="flex:1"></span>
+        <button class="btn small ghost" id="clearHistBtn">清空历史</button>
+      </div>
+      <div id="histList"></div>
     </div>
-    <div id="favList"></div>
+    <div class="libpane" id="lib-favs">
+      <div class="toolbar">
+        <span class="hint">加星的单集都在这里，点播直接播放。</span>
+      </div>
+      <div id="favList"></div>
+    </div>
   </section>
 
   <!-- ============ 设置 ============ -->
@@ -1085,7 +1098,7 @@ function recordHistory(sub, ep, startAt){
   if(ep.audioUrl) r.audioUrl = ep.audioUrl;
   lastHistKey = key;
   pruneHist(); saveHist(); markSyncDirty();
-  if($("#view-history").classList.contains("on")) renderHistory();
+  if($("#view-library").classList.contains("on")) renderHistory();
 }
 function saveHistPosition(){
   const r = curHist(); if(!r) return;
@@ -1114,7 +1127,7 @@ function markHistFinished(){
   if(r.duration) r.position = r.duration;
   r.updatedAt = Date.now(); r.lastPlayedAt = r.updatedAt;
   saveHist(); markSyncDirty();
-  if($("#view-history").classList.contains("on")) renderHistory();
+  if($("#view-library").classList.contains("on")) renderHistory();
 }
 function playHistoryItem(h){
   const sub = subs.find(s=>s.id===h.subId);
@@ -1179,7 +1192,7 @@ function toggleFav(sub, ep){
     toast("已收藏");
   }
   saveFavs(); markSyncDirty(); renderSubs();
-  if($("#view-favs").classList.contains("on")) renderFavs();
+  if($("#view-library").classList.contains("on")) renderFavs();
 }
 function renderFavs(){
   const box = $("#favList");
@@ -1621,10 +1634,17 @@ function switchView(name){
   $$(".tab").forEach(t=>t.setAttribute("aria-selected", t.dataset.view===name ? "true" : "false"));
   $$("section.view").forEach(v=>v.classList.toggle("on", v.id==="view-"+name));
   if(name==="settings") renderSettingsInfo();
-  if(name==="history") renderHistory();
-  if(name==="favs") renderFavs();
+  if(name==="library"){ renderHistory(); renderFavs(); }
   window.scrollTo({top:0});
 }
+/* 我的页内子 tab（历史/收藏） */
+let libTab = "history";
+function switchLibTab(which){
+  libTab = which;
+  $$(".subtab").forEach(t=>t.setAttribute("aria-selected", t.dataset.lib===which ? "true" : "false"));
+  $$(".libpane").forEach(p=>p.classList.toggle("on", p.id==="lib-"+which));
+}
+$$(".subtab").forEach(t=>t.addEventListener("click", ()=>switchLibTab(t.dataset.lib)));
 $$(".tab").forEach(t=>t.addEventListener("click", ()=>switchView(t.dataset.view)));
 $$(".addtab").forEach(t=>t.addEventListener("click", ()=>{
   $$(".addtab").forEach(x=>x.setAttribute("aria-selected", x===t ? "true" : "false"));
