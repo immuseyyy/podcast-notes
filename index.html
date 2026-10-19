@@ -555,6 +555,18 @@ async function fetchText(url, ms){
     return await r.text();
   } finally { clearTimeout(to); }
 }
+/* 喜马拉雅 RSS 的 enclosure 是 jt.ximalaya.com 跳转器（302 响应无 CORS 头，
+   浏览器 fetch 在第一步就被拦）；但它的 jt 查询参数就是直链 CDN URL（有 CORS *），抠出来直接用。 */
+function resolveXimalayaJt(url){
+  try{
+    const u = new URL(url);
+    if(/(^|\.)ximalaya\.com$/.test(u.hostname)){
+      const jt = u.searchParams.get("jt");
+      if(jt && /^https?:\/\//i.test(jt)) return jt;
+    }
+  }catch(e){}
+  return url;
+}
 /* 流式读 Response 为 blob。onProgress(txt): 有长度报"47%"，无长度报"12.3MB"。
    onChunk(): 每收到一个数据块调一次（用于重置无数据超时）。 */
 async function readBlobStream(r, onProgress, onChunk){
@@ -1524,19 +1536,16 @@ async function downloadEpisode(sub, ep){
   toast("正在下载…", 120000);
   const progD = txt=>toast("直连下载… " + txt, 120000);
   const progP = txt=>toast("代理下载… " + txt, 120000);
+  // 喜马拉雅跳转器（jt.ximalaya.com 302 无 CORS）先解出直链 CDN URL
+  const dlUrl = resolveXimalayaJt(ep.audioUrl);
   try{
     let blob = null;
     try{
-      blob = await fetchBlobDirect(ep.audioUrl, 30000, progD);
+      blob = await fetchBlobDirect(dlUrl, 30000, progD);
     }catch(de){
-      // 诊断：直连失败时显示错误类型（调试用）
-      const errName = (de && de.name) || "unknown";
-      const errMsg = (de && de.message) || "";
-      progP("直连失败[" + errName + ":" + errMsg.slice(0,40) + "]，转代理…");
-      await new Promise(r=>setTimeout(r, 1500));
       const p = await currentProxy().catch(()=>null);
       if(!p) throw de;
-      const r = await fetch(viaProxy(p, ep.audioUrl));
+      const r = await fetch(viaProxy(p, dlUrl));
       if(!r.ok) throw new Error("HTTP " + r.status);
       blob = await readBlobStream(r, progP, null);
     }
