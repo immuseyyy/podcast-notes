@@ -1,1 +1,5 @@
-{"note":"template 中的 {url} 会被替换为 encodeURIComponent(目标URL)。此文件由 .github/workflows/health-check.yml 每天自动健康检查并更新。","proxies":[{"name":"allorigins","template":"https://api.allorigins.win/raw?url={url}"}],"updated":"2026-10-19T00:00:00Z"}
+{
+  "note": "template 中的 {url} 会被替换为 encodeURIComponent(目标URL)。此文件由 .github/workflows/health-check.yml 每天自动健康检查并更新。",
+  "proxies": [],
+  "updated": "2026-10-20T03:29:04Z"
+}
