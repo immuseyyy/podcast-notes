@@ -329,13 +329,14 @@
   <section class="view" id="view-notes" aria-labelledby="tab-notes">
     <div class="toolbar">
       <button class="btn" id="exportMdBtn">导出 Markdown</button>
-      <span class="hint" style="align-self:center">按播客 → 单集分组，含时间点与音频链接，可直接放进 Obsidian。</span>
+      <span style="flex:1"></span>
+      <button class="btn small ghost" id="clearNotesBtn">全部删除</button>
     </div>
+    <div class="hint" style="margin-bottom:10px">按播客 → 单集分组，含时间点与音频链接，可直接放进 Obsidian。</div>
     <div id="noteList"></div>
   </section>
 
-  <!-- ============ 历史 ============ -->
-  <!-- ============ 我的（历史 + 收藏） ============ -->
+  <!-- ============ 我的（历史 + 收藏 + 设置） ============ -->
   <section class="view" id="view-library" aria-labelledby="tab-library">
     <div class="subtabs" role="tablist" aria-label="我的">
       <button class="subtab" role="tab" data-lib="history" aria-selected="true">历史</button>
@@ -1605,6 +1606,12 @@ async function downloadEpisode(sub, ep){
 }
 
 /* ---------- 导出 Markdown ---------- */
+$("#clearNotesBtn").addEventListener("click", async ()=>{
+  if(!notes.length){ toast("还没有笔记"); return; }
+  if(!(await uiConfirm("删除全部 " + notes.length + " 条笔记？此操作不可恢复。"))) return;
+  notes = []; saveNotes(); markSyncDirty(); renderNotes(); renderSubs();
+  toast("笔记已全部删除");
+});
 $("#exportMdBtn").addEventListener("click", ()=>{
   if(!notes.length){ toast("还没有笔记可导出"); return; }
   const today = new Date();
