@@ -281,7 +281,6 @@
     <button class="tab" role="tab" id="tab-subs" aria-selected="true" data-view="subs">订阅</button>
     <button class="tab" role="tab" id="tab-notes" aria-selected="false" data-view="notes">笔记 <span id="noteCount"></span></button>
     <button class="tab" role="tab" id="tab-library" aria-selected="false" data-view="library">我的</button>
-    <button class="tab" role="tab" id="tab-settings" aria-selected="false" data-view="settings">设置</button>
     <span class="netdot" id="netDot" title="代理状态"></span>
   </div>
 </header>
@@ -341,6 +340,7 @@
     <div class="subtabs" role="tablist" aria-label="我的">
       <button class="subtab" role="tab" data-lib="history" aria-selected="true">历史</button>
       <button class="subtab" role="tab" data-lib="favs" aria-selected="false">收藏</button>
+      <button class="subtab" role="tab" data-lib="settings" aria-selected="false">设置</button>
     </div>
     <div class="libpane on" id="lib-history">
       <div class="toolbar">
@@ -356,86 +356,86 @@
       </div>
       <div id="favList"></div>
     </div>
+    <div class="libpane" id="lib-settings">
+      <div class="card">
+        <h3>抓取代理</h3>
+        <p class="hint">抓 RSS 和小宇宙页面需要经过代理绕过跨域限制。App 启动时会自动测速并选用最快的，失败时自动切换下一个。</p>
+        <div class="kv"><span>当前代理</span><b id="proxyNow">探测中…</b></div>
+        <div class="kv"><span>同源预抓数据</span><b id="feedsInfo">未检测到</b></div>
+        <label class="flabel" for="workerInput">自建 Cloudflare Worker 地址模板（可选，留空则只用公共代理）</label>
+        <input class="txt" id="workerInput" type="url" placeholder="https://你的worker域名/?url={url}" autocomplete="off" />
+        <p class="hint">模板里的 <b>{url}</b> 会被替换为目标地址（已做 URL 编码）。保存后立即重新探测。</p>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small" id="workerSave">保存并重新探测</button>
+          <button class="btn small ghost" id="proxyRetest">重新测速</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>下载方式</h3>
+        <p class="hint">点单集或播放器上的下载按钮时如何处理音频。</p>
+        <div class="seg" role="group" aria-label="下载方式">
+          <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
+          <button id="dlShare" aria-pressed="false">发送到外部下载器</button>
+        </div>
+        <div class="row" id="downloaderRow" style="margin-top:10px">
+          <select class="txt" id="downloaderSel" aria-label="外部下载器">
+            <option value="idm.internet.download.manager">1DM（免费版）</option>
+            <option value="idm.internet.download.manager.plus">1DM+（付费版）</option>
+            <option value="com.dv.adm">ADM</option>
+            <option value="custom">自定义包名…</option>
+          </select>
+        </div>
+        <div class="row" id="downloaderCustomRow" style="margin-top:8px;display:none">
+          <input class="txt" id="downloaderCustom" placeholder="输入下载器的包名，如 idm.internet.download.manager" autocomplete="off" />
+        </div>
+        <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；外部下载器模式用 VIEW intent 把音频链接直接递给所选 App（必须和手机里装的是同一款，否则会跳到 Play Store）。链接同时会复制到剪贴板，可手动粘贴兜底。</p>
+      </div>
+
+      <div class="card">
+        <h3>打点行为</h3>
+        <p class="hint">点「打点」按钮时是否暂停播放。</p>
+        <div class="seg" role="group" aria-label="打点是否暂停播放">
+          <button id="capKeep" aria-pressed="true">打点不暂停</button>
+          <button id="capPauseBtn" aria-pressed="false">打点暂停播放</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>云端同步</h3>
+        <p class="hint">播放历史与收藏自动同步到 Cloudflare KV（Worker 需绑定 SYNC_KV 并设置 SYNC_TOKEN）。本地照常使用，云端只做备份与换机恢复。</p>
+        <label class="flabel" for="syncTokenInput">同步口令（与 Worker 的 SYNC_TOKEN 一致）</label>
+        <input class="txt" id="syncTokenInput" type="password" placeholder="输入同步口令" autocomplete="off" />
+        <div class="kv"><span>同步状态</span><b id="syncInfo">未配置</b></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn small" id="syncNowBtn">立即同步</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>备份 / 恢复</h3>
+        <p class="hint">全部数据（订阅、单集缓存、笔记、设置）只存在这台设备的浏览器里。清浏览器数据会丢失，请定期导出备份。</p>
+        <div class="row" style="margin-top:10px; flex-wrap:wrap">
+          <button class="btn small" id="backupBtn">导出备份 JSON</button>
+          <button class="btn small ghost" id="restoreBtn">导入备份 JSON</button>
+          <input type="file" id="restoreFile" accept="application/json,.json" class="sr" />
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>装到手机上（可选）</h3>
+        <p class="hint">把本页和下面两个文件放同一个目录托管（如 GitHub Pages），即可作为 PWA 安装到主屏幕：manifest 供安装识别，sw.js 负责离线缓存应用外壳。当前页面已内嵌清单，缺 sw.js 时仅离线缓存不可用，其余功能不受影响。</p>
+        <div class="row" style="margin-top:10px; flex-wrap:wrap">
+          <button class="btn small ghost" id="dlManifestBtn">下载 manifest.webmanifest</button>
+          <button class="btn small ghost" id="dlSwBtn">下载 sw.js</button>
+        </div>
+        <div class="kv" style="margin-top:8px"><span>数据占用</span><b id="dataSize">—</b></div>
+        <div class="kv"><span>订阅 / 笔记</span><b id="dataCounts">—</b></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ 设置 ============ -->
-  <section class="view" id="view-settings" aria-labelledby="tab-settings">
-    <div class="card">
-      <h3>抓取代理</h3>
-      <p class="hint">抓 RSS 和小宇宙页面需要经过代理绕过跨域限制。App 启动时会自动测速并选用最快的，失败时自动切换下一个。</p>
-      <div class="kv"><span>当前代理</span><b id="proxyNow">探测中…</b></div>
-      <div class="kv"><span>同源预抓数据</span><b id="feedsInfo">未检测到</b></div>
-      <label class="flabel" for="workerInput">自建 Cloudflare Worker 地址模板（可选，留空则只用公共代理）</label>
-      <input class="txt" id="workerInput" type="url" placeholder="https://你的worker域名/?url={url}" autocomplete="off" />
-      <p class="hint">模板里的 <b>{url}</b> 会被替换为目标地址（已做 URL 编码）。保存后立即重新探测。</p>
-      <div class="row" style="margin-top:10px">
-        <button class="btn small" id="workerSave">保存并重新探测</button>
-        <button class="btn small ghost" id="proxyRetest">重新测速</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>下载方式</h3>
-      <p class="hint">点单集或播放器上的下载按钮时如何处理音频。</p>
-      <div class="seg" role="group" aria-label="下载方式">
-        <button id="dlBrowser" aria-pressed="true">浏览器直接下载</button>
-        <button id="dlShare" aria-pressed="false">发送到外部下载器</button>
-      </div>
-      <div class="row" id="downloaderRow" style="margin-top:10px">
-        <select class="txt" id="downloaderSel" aria-label="外部下载器">
-          <option value="idm.internet.download.manager">1DM（免费版）</option>
-          <option value="idm.internet.download.manager.plus">1DM+（付费版）</option>
-          <option value="com.dv.adm">ADM</option>
-          <option value="custom">自定义包名…</option>
-        </select>
-      </div>
-      <div class="row" id="downloaderCustomRow" style="margin-top:8px;display:none">
-        <input class="txt" id="downloaderCustom" placeholder="输入下载器的包名，如 idm.internet.download.manager" autocomplete="off" />
-      </div>
-      <p class="hint" id="dlHint">直接下载经代理抓取为文件真下载（含文件名）；外部下载器模式用 VIEW intent 把音频链接直接递给所选 App（必须和手机里装的是同一款，否则会跳到 Play Store）。链接同时会复制到剪贴板，可手动粘贴兜底。</p>
-    </div>
-
-    <div class="card">
-      <h3>打点行为</h3>
-      <p class="hint">点「打点」按钮时是否暂停播放。</p>
-      <div class="seg" role="group" aria-label="打点是否暂停播放">
-        <button id="capKeep" aria-pressed="true">打点不暂停</button>
-        <button id="capPauseBtn" aria-pressed="false">打点暂停播放</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>云端同步</h3>
-      <p class="hint">播放历史与收藏自动同步到 Cloudflare KV（Worker 需绑定 SYNC_KV 并设置 SYNC_TOKEN）。本地照常使用，云端只做备份与换机恢复。</p>
-      <label class="flabel" for="syncTokenInput">同步口令（与 Worker 的 SYNC_TOKEN 一致）</label>
-      <input class="txt" id="syncTokenInput" type="password" placeholder="输入同步口令" autocomplete="off" />
-      <div class="kv"><span>同步状态</span><b id="syncInfo">未配置</b></div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn small" id="syncNowBtn">立即同步</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>备份 / 恢复</h3>
-      <p class="hint">全部数据（订阅、单集缓存、笔记、设置）只存在这台设备的浏览器里。清浏览器数据会丢失，请定期导出备份。</p>
-      <div class="row" style="margin-top:10px; flex-wrap:wrap">
-        <button class="btn small" id="backupBtn">导出备份 JSON</button>
-        <button class="btn small ghost" id="restoreBtn">导入备份 JSON</button>
-        <input type="file" id="restoreFile" accept="application/json,.json" class="sr" />
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>装到手机上（可选）</h3>
-      <p class="hint">把本页和下面两个文件放同一个目录托管（如 GitHub Pages），即可作为 PWA 安装到主屏幕：manifest 供安装识别，sw.js 负责离线缓存应用外壳。当前页面已内嵌清单，缺 sw.js 时仅离线缓存不可用，其余功能不受影响。</p>
-      <div class="row" style="margin-top:10px; flex-wrap:wrap">
-        <button class="btn small ghost" id="dlManifestBtn">下载 manifest.webmanifest</button>
-        <button class="btn small ghost" id="dlSwBtn">下载 sw.js</button>
-      </div>
-      <div class="kv" style="margin-top:8px"><span>数据占用</span><b id="dataSize">—</b></div>
-      <div class="kv"><span>订阅 / 笔记</span><b id="dataCounts">—</b></div>
-    </div>
-  </section>
 </main>
 
 <!-- ============ 播放器坞 ============ -->
@@ -1633,16 +1633,16 @@ $("#exportMdBtn").addEventListener("click", ()=>{
 function switchView(name){
   $$(".tab").forEach(t=>t.setAttribute("aria-selected", t.dataset.view===name ? "true" : "false"));
   $$("section.view").forEach(v=>v.classList.toggle("on", v.id==="view-"+name));
-  if(name==="settings") renderSettingsInfo();
-  if(name==="library"){ renderHistory(); renderFavs(); }
+  if(name==="library"){ renderHistory(); renderFavs(); renderSettingsInfo(); }
   window.scrollTo({top:0});
 }
-/* 我的页内子 tab（历史/收藏） */
+/* 我的页内子 tab（历史/收藏/设置） */
 let libTab = "history";
 function switchLibTab(which){
   libTab = which;
   $$(".subtab").forEach(t=>t.setAttribute("aria-selected", t.dataset.lib===which ? "true" : "false"));
   $$(".libpane").forEach(p=>p.classList.toggle("on", p.id==="lib-"+which));
+  if(which==="settings") renderSettingsInfo();
 }
 $$(".subtab").forEach(t=>t.addEventListener("click", ()=>switchLibTab(t.dataset.lib)));
 $$(".tab").forEach(t=>t.addEventListener("click", ()=>switchView(t.dataset.view)));
