@@ -62,4 +62,7 @@ GitHub Pages（托管 index.html，纯静态）
 ## 说明
 
 - 桌面端 Chrome / 移动端 Chrome、Edge、Firefox、Safari 均可使用
-- 语音输入依赖浏览器 Web Speech API（需连接 Google 服务器），国内网络不可用，已移除；请用输入法自带语音输入
+
+## License
+
+MIT
