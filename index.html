@@ -468,7 +468,7 @@
       </div>
       <textarea id="noteText" rows="3" enterkeyhint="enter" placeholder="记一句想法…（回车换行）"></textarea>
       <div class="saverow">
-        <button class="btn small ghost" id="micBtn" hidden></button>
+        <span class="hint">用输入法键盘上的麦克风键语音输入更稳定</span>
         <span class="sp"></span>
         <button class="btn small ghost" id="cancelEditBtn" hidden>取消编辑</button>
         <button class="btn small" id="saveNoteBtn">保存笔记</button>
@@ -1499,40 +1499,8 @@ $("#cancelEditBtn").addEventListener("click", ()=>{
   $("#capHint").textContent = "可打点冻结时间，不打点则按保存时的进度记";
   $("#cancelEditBtn").hidden = true; $("#saveNoteBtn").textContent = "保存笔记";
 });
-/* 语音输入（支持才显示） */
-(function(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR) return;
-  const btn = $("#micBtn");
-  btn.hidden = false; btn.innerHTML = I.mic + "语音输入";
-  let rec = null, listening = false;
-  btn.addEventListener("click", ()=>{
-    if(listening){ try{ rec.stop(); }catch(e){} return; }
-    rec = new SR();
-    rec.lang = "zh-CN"; rec.interimResults = false; rec.continuous = false;
-    rec.onresult = e=>{
-      let s = "";
-      for(const r of e.results) s += r[0].transcript;
-      const ta = $("#noteText");
-      ta.value = (ta.value ? ta.value + (/\n$/.test(ta.value) ? "" : "\n") : "") + s;
-    };
-    rec.onend = ()=>{ listening = false; btn.classList.remove("mic-on"); btn.innerHTML = I.mic + "语音输入"; };
-    rec.onerror = async ev=>{
-      listening = false; btn.classList.remove("mic-on"); btn.innerHTML = I.mic + "语音输入";
-      if(ev.error==="aborted") return;
-      const msg = {
-        "not-allowed": "麦克风权限被拒绝。\n\n请在浏览器设置里允许本页面使用麦克风，然后再试。",
-        "network": "连不上语音识别服务器。\n\nChrome 的语音识别要把音频发到 Google 服务器转文字，国内网络通常连不上 Google。\n\n建议：改用输入法自带的语音输入（键盘上的麦克风键），说完文字直接进输入框，效果一样。",
-        "no-speech": "没听到声音。\n\n请靠近麦克风说话，或检查手机是否静音/麦克风被占用。",
-        "audio-capture": "找不到麦克风设备。",
-        "service-not-allowed": "浏览器禁用了语音识别服务。"
-      }[ev.error] || ("语音输入失败：" + ev.error);
-      await uiAlert(msg);
-    };
-    try{ rec.start(); listening = true; btn.classList.add("mic-on"); btn.textContent = "聆听中，点此停止"; }
-    catch(e){ toast("语音输入启动失败"); }
-  });
-})();
+/* 语音输入已移除（2026-10-20）：Chrome 的 Web Speech API 需连接 Google 服务器，
+   国内网络/部分机型上启动即结束且无报错，不可用。改用输入法自带语音输入。 */
 
 /* ---------- 下载 ---------- */
 function downloaderPkg(){
