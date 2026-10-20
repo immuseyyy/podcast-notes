@@ -1,69 +1,65 @@
-# 播客速记 · 独立版仓库
+# 播客速记
 
-纯静态、零后台的播客速记 PWA。所有文件都在这个仓库里，不依赖任何第三方服务商的后台。
+一个纯静态、零后端的播客笔记 PWA。订阅播客、边听边打点记笔记、导出 Markdown 到 Obsidian，所有数据只存在本地浏览器。
+
+## 功能
+
+- **订阅**：搜节目名（iTunes）、粘贴 RSS 地址、小宇宙单集链接导入
+- **笔记**：播放时打点记录时间点，笔记按播客 → 单集分组
+- **我的**：播放历史、收藏的单集、设置（代理、下载方式、云端同步、备份）
+- **导出**：一键导出 Obsidian 兼容的 Markdown；JSON 备份/恢复换手机迁移
+- **下载**：浏览器直接下载，或发送到 1DM/ADM 等外部下载器
+- **云端同步**（可选）：通过自建 Cloudflare Worker + KV，多设备同步订阅、笔记、收藏、历史
+
+## 架构
+
+```
+GitHub Pages（托管 index.html，纯静态）
+    ├── 本地 localStorage：订阅、笔记、历史、收藏、设置
+    ├── RSS 抓取：自建 Cloudflare Worker（主力）→ allorigins（备用）
+    │   └── 直连优先：RSS 源带 CORS 头时直接抓，不走代理
+    ├── GitHub Actions（可选）：每日预抓 RSS → data/feeds.json，每日代理健康检查
+    └── 云端同步（可选）：Worker + KV，token 鉴权
+```
+
+单文件 `index.html` 即 App 本体，无构建步骤，无第三方 SDK。
+
+## 自己用（最快）
+
+1. Fork 或下载本仓库
+2. 开 GitHub Pages：Settings → Pages → Deploy from a branch → `main` / `/ (root)`
+3. 手机浏览器打开 `https://<用户名>.github.io/podcast-notes/` 即可使用
+4. （可选）"添加到主屏幕"获得 App 般体验
+
+## 进阶：自建代理与同步
+
+默认用公共代理抓 RSS，速度和稳定性一般。建议部署自己的 Cloudflare Worker：
+
+1. Cloudflare 注册（免费）→ Workers → Create → Hello World 模板
+2. 把 `cloudflare-worker.js` 内容粘贴进去 → Deploy
+3. App → 我的 → 设置 → 填入 Worker 地址模板：`https://xxx.workers.dev/?url={url}`
+4. 需要多设备同步：在 Worker 的 KV 和环境变量里配好后，App 设置里填入同步口令
+
+详见 `cloudflare-worker.js` 头部注释。
+
+## 隐私
+
+- 订阅、笔记、播放历史、收藏只存在浏览器本地（localStorage），不上传到任何服务器
+- 开启云端同步后，数据存于你自己的 Cloudflare KV，需口令才能读写
+- 本仓库只含 App 代码、代理名单和公开 RSS 预抓数据，不含任何个人数据
 
 ## 仓库内容
 
 | 文件 | 说明 |
 |---|---|
-| `index.html` | App 本体（单文件，附件 zip 里已包含导出的成品，直接用） |
-| `proxies.json` | 公共代理名单，App 启动时拉取并自动测速选用 |
-| `cloudflare-worker.js` | 你自己的 CORS 中转 Worker 脚本（主力代理） |
-| `data/subscriptions.json` | 订阅源清单（给定时预抓用的） |
-| `data/feeds.json` | 定时预抓生成的订阅数据（由 Action 自动生成，不用手写） |
-| `.github/workflows/health-check.yml` | 每天自动检测代理可用性，失效自动剔除 |
-| `.github/workflows/fetch-feeds.yml` | 每天自动抓取订阅源，生成 `data/feeds.json` |
-
-**隐私说明**：你的订阅、笔记、设置只存在手机浏览器本地（localStorage），永远不进这个仓库。仓库里只有代理名单和公开 RSS 数据，公开/私有仓库都无妨。
-
-## 一次性搭建（约 20 分钟）
-
-### 1. 建仓库并上传文件
-1. GitHub → New repository，取名如 `podcast-notes`，Public/Private 均可
-2. 把本 zip 解压后的**全部文件**上传到仓库根目录（含 `.github` 隐藏目录）
-   - `index.html` 即 App 本体，放在根目录
-
-### 2. 开 GitHub Pages（托管 App）
-1. 仓库 Settings → Pages → Build and deployment
-2. Source 选 `Deploy from a branch`，Branch 选 `main`，目录选 `/ (root)`，Save
-3. 等 1–2 分钟，得到地址：`https://<你的用户名>.github.io/podcast-notes/`
-4. 手机浏览器打开这个地址，就是你的独立版 App（建议 Firefox）
-
-### 3. 部署 Cloudflare Worker（你自己的主力代理，约 10 分钟）
-1. 注册 [cloudflare.com](https://cloudflare.com)（免费）
-2. 左侧 Workers → Create → 选 `Hello World` 模板 → Create Worker
-3. 把本仓库 `cloudflare-worker.js` 的**全部内容**粘贴进去，替换原有代码 → Deploy
-4. 复制 Worker 地址（如 `https://xxx.workers.dev`）
-5. 打开 App → 设置 → 自建代理地址，填入：`https://xxx.workers.dev/?url={url}`（`{url}` 占位符保留不要动）
-6. 免费额度每天 10 万次请求，个人用绰绰有余
-
-### 4. 完整 PWA 安装（可选）
-App 设置里可以下载 `sw.js` 和 `manifest.json`，放到仓库根目录并提交，
-之后从 Pages 地址"添加到主屏幕"，即为完整 PWA（离线可用）。
-
-### 5. 加订阅源（给定时预抓用）
-编辑 `data/subscriptions.json`，格式：
-```json
-[
-  {"id": "shangye", "name": "商业就是这样", "feedUrl": "https://www.ximalaya.com/album/46587439.xml"}
-]
-```
-提交后去 Actions 页面手动点一次 `Run workflow`（或等第二天自动跑），
-`data/feeds.json` 就会生成。之后 App 启动直接读自家文件，不走代理。
-
-## 日常运转（全自动）
-
-- 每天 11:00（北京时间）：健康检查自动跑，失效代理自动剔除并提交
-- 每天 11:30（北京时间）：RSS 预抓自动跑，`data/feeds.json` 自动更新
-- App 内：小宇宙单集粘贴导入、搜节目名订阅走「Worker → 公共代理」自动故障转移
-
-## 换手机迁移数据
-
-App 设置 → 备份：导出全部数据 JSON → 新手机 App 设置 → 恢复：导入。
-（另有 Obsidian 兼容的 Markdown 一键导出，单独备份笔记。）
+| `index.html` | App 本体（单文件） |
+| `cloudflare-worker.js` | CORS 中转 + 云端同步的 Worker 脚本 |
+| `proxies.json` | 公共代理名单（备用） |
+| `data/subscriptions.json` | 预抓的订阅源清单（给 Actions 用） |
+| `data/feeds.json` | Actions 每日预抓生成的订阅数据 |
+| `.github/workflows/` | 每日 RSS 预抓、代理健康检查 |
 
 ## 说明
 
-- 本独立版与闪退问题无关：已证实闪退是"点卡片跳转"动作触发的 Chromium 原生崩溃，
-  与页面内容/后台无关。在手机上请继续用 Firefox 打开。
-- 公共代理（allorigins）只是备胎，平时流量只走你自己的 Worker。
+- 桌面端 Chrome / 移动端 Chrome、Edge、Firefox、Safari 均可使用
+- 语音输入依赖浏览器 Web Speech API（需连接 Google 服务器），国内网络不可用，已移除；请用输入法自带语音输入
