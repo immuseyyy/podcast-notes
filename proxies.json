@@ -1,5 +1,5 @@
 {
   "note": "template 中的 {url} 会被替换为 encodeURIComponent(目标URL)。此文件由 .github/workflows/health-check.yml 每天自动健康检查并更新。",
   "proxies": [],
-  "updated": "2026-10-29T03:43:05Z"
+  "updated": "2026-10-30T03:43:47Z"
 }
